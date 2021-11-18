@@ -46,7 +46,12 @@ where
             .execute(cmd, self.shapes.borrow_mut().borrow_mut());
     }
     pub fn render_shapes(&mut self) {
-        self.renderer.render_shapes(self.shapes.borrow().borrow());
+        match self.renderer.render_shapes(self.shapes.borrow().borrow()) {
+            Err(error) => self
+                .logger
+                .log(&format!("{}:{}:{}", file!(), line!(), error)),
+            Ok(()) => (),
+        }
     }
     pub fn run<CommanderType: Commander>(&mut self, commander: CommanderType) {
         for cmd in commander {
@@ -74,6 +79,5 @@ pub mod tests {
         let mut app = get_test_app();
         app.run(commander);
         assert_eq!(app.executor.executed.len(), app.shapes.borrow().len());
-    }
     }
 }
