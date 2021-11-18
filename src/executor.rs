@@ -3,8 +3,8 @@ use super::shape::Shapes;
 
 #[derive(Default, Debug)]
 pub struct Executor {
-    executed: Vec<Box<dyn Command>>,
-    undone: Vec<Box<dyn Command>>,
+    pub executed: Vec<Box<dyn Command>>,
+    pub undone: Vec<Box<dyn Command>>,
 }
 
 pub enum ExecutionError {

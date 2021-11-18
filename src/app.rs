@@ -73,6 +73,7 @@ pub mod tests {
         let commander = get_cmd_vec();
         let mut app = get_test_app();
         app.run(commander);
-        dbg!(app);
+        assert_eq!(app.executor.executed.len(), app.shapes.borrow().len());
+    }
     }
 }
