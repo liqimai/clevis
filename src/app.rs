@@ -80,4 +80,14 @@ pub mod tests {
         app.run(commander);
         assert_eq!(app.executor.executed.len(), app.shapes.borrow().len());
     }
+
+    #[test]
+    fn test_file_renderer() {
+        use crate::render::FileRenderer;
+        let screen_file_name = "crate::app::tests::test_file_renderer.screen";
+        let mut app = App::new(DummyLogger, FileRenderer::new(screen_file_name).unwrap());
+        let commander = get_cmd_vec();
+        app.run(commander);
+        std::fs::remove_file(screen_file_name).unwrap();
+    }
 }

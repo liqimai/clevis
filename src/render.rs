@@ -17,6 +17,46 @@ pub trait Renderer {
     }
 }
 
+use std::fs::File;
+use std::io;
+#[derive(Debug)]
+pub struct FileRenderer {
+    file: File,
+    filename: String,
+}
+
+impl FileRenderer {
+    pub fn new(filename: &str) -> Result<FileRenderer, io::Error> {
+        Ok(FileRenderer {
+            filename: filename.to_string(),
+            file: File::create(filename)?,
+        })
+    }
+}
+
+use std::io::prelude::*;
+impl Renderer for FileRenderer {
+    fn init_frame(&mut self) -> Result<(), Box<dyn Error>> {
+        self.file = File::create(&self.filename)?;
+        self.file.rewind()?;
+
+        Ok(())
+    }
+    fn finish_frame(&mut self) -> Result<(), Box<dyn Error>> {
+        let len = self.file.stream_position()?;
+        self.file.set_len(len)?;
+        self.file.sync_all()?;
+
+        Ok(())
+    }
+    fn render(&mut self, name: &str, shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
+        let s = format!("{} {:?}\n", name, shape);
+        self.file.write_all(s.as_bytes())?;
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -79,5 +119,56 @@ pub mod tests {
             cnt += 1;
         }
         assert_eq!(shapes.len(), cnt);
+    }
+
+    #[test]
+    fn test_file_renderer() {
+        use crate::shape::*;
+        use std::collections::HashMap;
+
+        let screen_file_name = "crate::render::tests::test_file_renderer.screen";
+        let mut render = FileRenderer::new(screen_file_name).unwrap();
+        let shape_list = [
+            (
+                "PointName".to_string(),
+                Box::new(Point::default()) as Box<dyn Shape>,
+            ),
+            (
+                "RectangleName".to_string(),
+                Box::new(Rectangle::default()) as Box<dyn Shape>,
+            ),
+            (
+                "LineName".to_string(),
+                Box::new(Line::default()) as Box<dyn Shape>,
+            ),
+            (
+                "CircleName".to_string(),
+                Box::new(Circle::default()) as Box<dyn Shape>,
+            ),
+            (
+                "SquareName".to_string(),
+                Box::new(Square::default()) as Box<dyn Shape>,
+            ),
+        ];
+        let mut shapes: Shapes = HashMap::new();
+
+        let mut answer = "".to_string();
+        for (n, s) in shape_list {
+            answer += &format!("{} {:?}\n", &n, &s);
+
+            shapes.insert(n, s);
+            render.render_shapes(&shapes).unwrap();
+
+            let mut string_render = String::new();
+            File::open(screen_file_name)
+                .unwrap()
+                .read_to_string(&mut string_render)
+                .unwrap();
+            check_string_render(&shapes, &string_render);
+
+            // use std::{thread, time};
+            // thread::sleep(time::Duration::from_secs(1));
+        }
+        std::fs::remove_file(screen_file_name).unwrap();
     }
 }
