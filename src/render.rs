@@ -1,12 +1,13 @@
 use crate::shape::{Shape, Shapes};
 use std::borrow::Borrow;
 use std::error::Error;
+use std::fmt::Debug;
 
-pub trait Renderer {
+pub trait Renderer<RenderType> {
     fn init_frame(&mut self) -> Result<(), Box<dyn Error>>;
     fn finish_frame(&mut self) -> Result<(), Box<dyn Error>>;
-    fn render(&mut self, name: &str, shape: &dyn Shape) -> Result<(), Box<dyn Error>>;
-    fn render_shapes(&mut self, shapes: &Shapes) -> Result<(), Box<dyn Error>> {
+    fn render(&mut self, name: &str, shape: &dyn Shape<RenderType>) -> Result<(), Box<dyn Error>>;
+    fn render_shapes(&mut self, shapes: &Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
         self.init_frame()?;
         for (name, shape) in shapes {
             self.render(name, shape.borrow())?;
@@ -17,68 +18,54 @@ pub trait Renderer {
     }
 }
 
-use std::fs::File;
-use std::io;
-#[derive(Debug)]
-pub struct FileRenderer {
-    file: File,
-    filename: String,
-}
+#[derive(Debug, Default)]
+pub struct DummyRenderer;
 
-impl FileRenderer {
-    pub fn new(filename: &str) -> Result<FileRenderer, io::Error> {
-        Ok(FileRenderer {
-            filename: filename.to_string(),
-            file: File::create(filename)?,
-        })
+impl<T> Renderer<T> for DummyRenderer {
+    fn render(&mut self, _name: &str, _shape: &dyn Shape<T>) -> Result<(), Box<dyn Error>> {
+        Ok(())
     }
-}
-
-use std::io::prelude::*;
-impl Renderer for FileRenderer {
     fn init_frame(&mut self) -> Result<(), Box<dyn Error>> {
-        self.file = File::create(&self.filename)?;
-        self.file.rewind()?;
-
         Ok(())
     }
     fn finish_frame(&mut self) -> Result<(), Box<dyn Error>> {
-        let len = self.file.stream_position()?;
-        self.file.set_len(len)?;
-        self.file.sync_all()?;
-
-        Ok(())
-    }
-    fn render(&mut self, name: &str, shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
-        let s = format!("{} {:?}\n", name, shape);
-        self.file.write_all(s.as_bytes())?;
-
         Ok(())
     }
 }
+
+impl<S: Debug> Shape<DummyRenderer> for S {
+    fn draw(&self, _render: &mut DummyRenderer) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+}
+
+pub mod file_renderer;
+pub use file_renderer::FileRenderer;
+
+// pub mod html_renderer;
+// pub use html_renderer::HtmlRenderer;
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::shape::tests::get_shapes;
+    pub use crate::shape::tests::get_shapes;
+    pub use std::collections::HashMap;
+    use std::fmt::Debug;
     use std::io::Write;
 
-    #[derive(Debug)]
-    pub struct DummyRenderer;
+    impl<S, W> Shape<W> for S
+    where
+        S: Debug,
+        W: Write,
+    {
+        fn draw(&self, render: &mut W) -> Result<(), Box<dyn Error>> {
+            render.write_all(format!("{:?}", &self).as_bytes())?;
 
-    impl Renderer for DummyRenderer {
-        fn render(&mut self, _name: &str, _shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
-            Ok(())
-        }
-        fn init_frame(&mut self) -> Result<(), Box<dyn Error>> {
-            Ok(())
-        }
-        fn finish_frame(&mut self) -> Result<(), Box<dyn Error>> {
             Ok(())
         }
     }
 
-    impl<T: Write> Renderer for T {
+    impl<W: Write> Renderer<W> for W {
         fn init_frame(&mut self) -> Result<(), Box<dyn Error>> {
             self.write_all(b"\n")?;
             Ok(())
@@ -87,9 +74,11 @@ pub mod tests {
             self.flush()?;
             Ok(())
         }
-        fn render(&mut self, name: &str, shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
-            let s = format!("{} {:?}\n", name, shape);
-            self.write_all(s.as_bytes())?;
+        fn render(&mut self, name: &str, shape: &dyn Shape<W>) -> Result<(), Box<dyn Error>> {
+            self.write_all(name.as_bytes())?;
+            self.write_all(b" ")?;
+            shape.draw(self)?;
+            self.write_all(b"\n")?;
             Ok(())
         }
     }
@@ -101,74 +90,53 @@ pub mod tests {
 
         let mut buff = Vec::<u8>::new();
         buff.render_shapes(&shapes).unwrap();
-        let string_render = String::from_utf8(buff).unwrap(); // buffer to string
-        check_string_render(&shapes, &string_render);
+        let render_result = String::from_utf8(buff).unwrap(); // buffer to string
+        println!("{}", &render_result);
+        check_string_render(&get_answers(), &render_result);
     }
 
-    fn check_string_render(shapes: &Shapes, string_render: &str) {
+    pub fn get_answers() -> HashMap<String, String> {
+        use crate::shape::*;
+
+        HashMap::from([
+            (
+                std::any::type_name::<Line>().into(),
+                "Line(Point { x: 0, y: 0 }, Point { x: 0, y: 0 })".into(),
+            ),
+            (
+                std::any::type_name::<Square>().into(),
+                "Square { corner: Point { x: 0, y: 0 }, side: 0 }".into(),
+            ),
+            (
+                std::any::type_name::<Circle>().into(),
+                "Circle { center: Point { x: 0, y: 0 }, radius: 0 }".into(),
+            ),
+            (
+                std::any::type_name::<Point>().into(),
+                "Point { x: 0, y: 0 }".into(),
+            ),
+            (
+                std::any::type_name::<Rectangle>().into(),
+                "Rectangle(Point { x: 0, y: 0 }, Point { x: 0, y: 0 })".into(),
+            ),
+        ])
+    }
+
+    pub fn check_string_render(answer: &HashMap<String, String>, render_result: &str) {
         let mut cnt = 0;
-        for line in string_render.split('\n') {
+        for line in render_result.split('\n') {
             if line.is_empty() {
                 continue;
             }
             let v: Vec<&str> = line.splitn(2, " ").collect();
             match v[..] {
-                [name, debug_info] => assert_eq!(&format!("{:?}", shapes[name]), debug_info),
+                [name, debug_info] => {
+                    assert_eq!(answer[name], debug_info);
+                }
                 _ => panic!("each line should be in '<name> <shape debug>' format."),
             }
             cnt += 1;
         }
-        assert_eq!(shapes.len(), cnt);
-    }
-
-    #[test]
-    fn test_file_renderer() {
-        use crate::shape::*;
-        use std::collections::HashMap;
-
-        let screen_file_name = "crate::render::tests::test_file_renderer.screen";
-        let mut render = FileRenderer::new(screen_file_name).unwrap();
-        let shape_list = [
-            (
-                "PointName".to_string(),
-                Box::new(Point::default()) as Box<dyn Shape>,
-            ),
-            (
-                "RectangleName".to_string(),
-                Box::new(Rectangle::default()) as Box<dyn Shape>,
-            ),
-            (
-                "LineName".to_string(),
-                Box::new(Line::default()) as Box<dyn Shape>,
-            ),
-            (
-                "CircleName".to_string(),
-                Box::new(Circle::default()) as Box<dyn Shape>,
-            ),
-            (
-                "SquareName".to_string(),
-                Box::new(Square::default()) as Box<dyn Shape>,
-            ),
-        ];
-        let mut shapes: Shapes = HashMap::new();
-
-        let mut answer = "".to_string();
-        for (n, s) in shape_list {
-            answer += &format!("{} {:?}\n", &n, &s);
-
-            shapes.insert(n, s);
-            render.render_shapes(&shapes).unwrap();
-
-            let mut string_render = String::new();
-            File::open(screen_file_name)
-                .unwrap()
-                .read_to_string(&mut string_render)
-                .unwrap();
-            check_string_render(&shapes, &string_render);
-
-            // use std::{thread, time};
-            // thread::sleep(time::Duration::from_secs(1));
-        }
-        std::fs::remove_file(screen_file_name).unwrap();
+        assert_eq!(answer.len(), cnt);
     }
 }

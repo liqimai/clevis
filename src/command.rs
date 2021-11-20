@@ -1,37 +1,52 @@
 use crate::shape::{Shape, Shapes};
 use std::fmt;
+use std::marker::PhantomData;
 
-pub trait Command: fmt::Debug + fmt::Display {
-    fn execute(&mut self, shapes: &mut Shapes);
-    fn undo(&mut self, shapes: &mut Shapes);
+pub trait Command<RenderType>: fmt::Debug + fmt::Display {
+    fn execute(&mut self, shapes: &mut Shapes<RenderType>);
+    fn undo(&mut self, shapes: &mut Shapes<RenderType>);
 }
 
 #[derive(Debug)]
-pub struct DrawShape<T: Shape> {
+pub struct DrawShape<RenderType, ShapeType>
+where
+    ShapeType: Shape<RenderType>,
+{
     name: String,
-    shape: T,
+    shape: ShapeType,
+    phantom: PhantomData<RenderType>,
 }
 
-impl<T: Shape + Default> Default for DrawShape<T> {
+impl<RenderType, ShapeType> Default for DrawShape<RenderType, ShapeType>
+where
+    ShapeType: Shape<RenderType> + Default,
+{
     fn default() -> Self {
         Self {
-            name: std::any::type_name::<T>().into(),
-            shape: T::default(),
+            name: std::any::type_name::<ShapeType>().into(),
+            shape: ShapeType::default(),
+            phantom: PhantomData,
         }
     }
 }
 
-impl<T: Shape> fmt::Display for DrawShape<T> {
+impl<RenderType, ShapeType> fmt::Display for DrawShape<RenderType, ShapeType>
+where
+    ShapeType: Shape<RenderType>,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} {:?}", self.name, self.shape)
     }
 }
 
-impl<T: 'static + Shape + Copy> Command for DrawShape<T> {
-    fn execute(&mut self, shapes: &mut Shapes) {
+impl<RenderType: fmt::Debug, ShapeType> Command<RenderType> for DrawShape<RenderType, ShapeType>
+where
+    ShapeType: 'static + Shape<RenderType> + Copy,
+{
+    fn execute(&mut self, shapes: &mut Shapes<RenderType>) {
         shapes.insert(self.name.clone(), Box::new((self.shape).clone()));
     }
-    fn undo(&mut self, shapes: &mut Shapes) {
+    fn undo(&mut self, shapes: &mut Shapes<RenderType>) {
         shapes.remove(&self.name);
     }
 }
@@ -39,17 +54,20 @@ impl<T: 'static + Shape + Copy> Command for DrawShape<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::render::DummyRenderer;
     use crate::shape::*;
 
     #[test]
     fn execute() {
-        let mut cmd1 = DrawShape {
+        let mut cmd1 = DrawShape::<DummyRenderer, _> {
             shape: Point::default(),
             name: "p1".to_string(),
+            phantom: PhantomData,
         };
-        let mut cmd2 = DrawShape {
+        let mut cmd2 = DrawShape::<DummyRenderer, _> {
             shape: Rectangle::default(),
             name: "p2".to_string(),
+            phantom: PhantomData,
         };
         let mut shapes = Shapes::default();
 

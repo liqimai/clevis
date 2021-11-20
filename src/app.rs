@@ -10,30 +10,30 @@ use crate::render::Renderer;
 use crate::shape::Shapes;
 
 #[derive(Debug)]
-pub struct App<LoggerType, RendererType>
+pub struct App<LoggerType, RenderType>
 where
     LoggerType: Logger,
-    RendererType: Renderer,
+    RenderType: Renderer<RenderType>,
 {
     // store shapes
-    shapes: RefCell<Shapes>,
+    shapes: RefCell<Shapes<RenderType>>,
 
     // draw shapes in its own way
-    renderer: RendererType,
+    renderer: RenderType,
 
     // a list of logger
     logger: LoggerType,
 
     // execute command
-    executor: Executor,
+    executor: Executor<RenderType>,
 }
 
-impl<LoggerType, RendererType> App<LoggerType, RendererType>
+impl<LoggerType, RenderType> App<LoggerType, RenderType>
 where
     LoggerType: Logger,
-    RendererType: Renderer,
+    RenderType: Renderer<RenderType>,
 {
-    pub fn new(logger: LoggerType, renderer: RendererType) -> Self {
+    pub fn new(logger: LoggerType, renderer: RenderType) -> Self {
         App {
             shapes: RefCell::new(Shapes::default()),
             executor: Executor::default(),
@@ -41,7 +41,7 @@ where
             logger,
         }
     }
-    pub fn execute(&mut self, cmd: Box<dyn Command>) {
+    pub fn execute(&mut self, cmd: Box<dyn Command<RenderType>>) {
         self.executor
             .execute(cmd, self.shapes.borrow_mut().borrow_mut());
     }
@@ -53,7 +53,7 @@ where
             Ok(()) => (),
         }
     }
-    pub fn run<CommanderType: Commander>(&mut self, commander: CommanderType) {
+    pub fn run<CommanderType: Commander<RenderType>>(&mut self, commander: CommanderType) {
         for cmd in commander {
             self.logger.log(&cmd.to_string());
             self.execute(cmd);
@@ -67,7 +67,7 @@ pub mod tests {
     use super::*;
     use crate::commander::tests::get_cmd_vec;
     use crate::log::tests::DummyLogger;
-    use crate::render::tests::DummyRenderer;
+    use crate::render::DummyRenderer;
 
     pub fn get_test_app() -> App<DummyLogger, DummyRenderer> {
         App::new(DummyLogger, DummyRenderer)
@@ -88,6 +88,5 @@ pub mod tests {
         let mut app = App::new(DummyLogger, FileRenderer::new(screen_file_name).unwrap());
         let commander = get_cmd_vec();
         app.run(commander);
-        std::fs::remove_file(screen_file_name).unwrap();
     }
 }
