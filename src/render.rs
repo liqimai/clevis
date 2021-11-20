@@ -1,7 +1,6 @@
 use crate::shape::{Shape, Shapes};
 use std::borrow::Borrow;
 use std::error::Error;
-use std::fmt::Debug;
 
 pub trait Renderer<RenderType> {
     fn init_frame(&mut self) -> Result<(), Box<dyn Error>>;
@@ -18,31 +17,13 @@ pub trait Renderer<RenderType> {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct DummyRenderer;
+mod dummy_renderer;
+pub use dummy_renderer::DummyRenderer;
 
-impl<T> Renderer<T> for DummyRenderer {
-    fn render(&mut self, _name: &str, _shape: &dyn Shape<T>) -> Result<(), Box<dyn Error>> {
-        Ok(())
-    }
-    fn init_frame(&mut self) -> Result<(), Box<dyn Error>> {
-        Ok(())
-    }
-    fn finish_frame(&mut self) -> Result<(), Box<dyn Error>> {
-        Ok(())
-    }
-}
-
-impl<S: Debug> Shape<DummyRenderer> for S {
-    fn draw(&self, _render: &mut DummyRenderer) -> Result<(), Box<dyn Error>> {
-        Ok(())
-    }
-}
-
-pub mod file_renderer;
+mod file_renderer;
 pub use file_renderer::FileRenderer;
 
-// pub mod html_renderer;
+// mod html_renderer;
 // pub use html_renderer::HtmlRenderer;
 
 #[cfg(test)]
