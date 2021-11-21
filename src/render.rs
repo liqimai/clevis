@@ -23,8 +23,8 @@ pub use dummy_renderer::DummyRenderer;
 mod file_renderer;
 pub use file_renderer::FileRenderer;
 
-// mod html_renderer;
-// pub use html_renderer::HtmlRenderer;
+mod html_renderer;
+pub use html_renderer::HtmlRenderer;
 
 #[cfg(test)]
 pub mod tests {

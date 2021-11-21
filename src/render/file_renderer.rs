@@ -75,7 +75,7 @@ pub mod tests {
         use crate::shape::*;
         use std::fs::File;
 
-        let screen_file_name = "crate::render::tests::test_file_renderer.screen";
+        let screen_file_name = "crate::render::file_renderer::tests::test_file_renderer.screen";
         let full_answer = get_answers();
         let full_shapes = get_shapes();
 
