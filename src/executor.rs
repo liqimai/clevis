@@ -1,7 +1,6 @@
 use super::command::Command;
 use super::shape::Shapes;
 
-#[derive(Debug)]
 pub struct Executor<RenderType> {
     pub executed: Vec<Box<dyn Command<RenderType>>>,
     pub undone: Vec<Box<dyn Command<RenderType>>>,

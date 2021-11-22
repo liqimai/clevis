@@ -1,7 +1,7 @@
 use crate::shape::Shapes;
 use std::fmt;
 
-pub trait Command<RenderType>: fmt::Debug + fmt::Display {
+pub trait Command<RenderType>: fmt::Display {
     fn execute(&mut self, shapes: &mut Shapes<RenderType>);
     fn undo(&mut self, shapes: &mut Shapes<RenderType>);
 }

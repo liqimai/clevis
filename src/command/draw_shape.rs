@@ -2,7 +2,6 @@ use super::*;
 use crate::shape::{Shape, Shapes};
 use std::marker::PhantomData;
 
-#[derive(Debug)]
 pub struct DrawShape<RenderType, ShapeType>
 where
     ShapeType: Shape<RenderType>,
@@ -47,7 +46,7 @@ where
     }
 }
 
-impl<RenderType: fmt::Debug, ShapeType> Command<RenderType> for DrawShape<RenderType, ShapeType>
+impl<RenderType, ShapeType> Command<RenderType> for DrawShape<RenderType, ShapeType>
 where
     ShapeType: 'static + Shape<RenderType> + Copy,
 {

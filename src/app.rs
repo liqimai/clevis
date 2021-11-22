@@ -9,7 +9,6 @@ use crate::log::Logger;
 use crate::render::Renderer;
 use crate::shape::Shapes;
 
-#[derive(Debug)]
 pub struct App<LoggerType, RenderType>
 where
     LoggerType: Logger,
