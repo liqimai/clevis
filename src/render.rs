@@ -64,6 +64,12 @@ pub mod tests {
         }
     }
 
+    pub fn get_writer_render_result(shapes: &Shapes<Vec<u8>>) -> String {
+        let mut buff = Vec::<u8>::new();
+        buff.render_shapes(&shapes).unwrap();
+        String::from_utf8(buff).unwrap()
+    }
+
     #[test]
     fn test_writer_renderer() {
         let shapes = get_shapes();

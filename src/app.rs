@@ -41,8 +41,13 @@ where
         }
     }
     pub fn execute(&mut self, cmd: Box<dyn Command<RenderType>>) {
-        self.executor
+        let res = self
+            .executor
             .execute(cmd, self.shapes.borrow_mut().borrow_mut());
+        match res {
+            Err(error) => eprintln!("{}", error),
+            Ok(()) => (),
+        }
     }
     pub fn render_shapes(&mut self) {
         match self.renderer.render_shapes(self.shapes.borrow().borrow()) {

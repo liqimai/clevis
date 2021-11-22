@@ -42,7 +42,7 @@ pub mod tests {
         let mut exe = Executor::<DummyRenderer>::default();
         let mut shapes = Shapes::default();
         for cmd in commands {
-            exe.execute(cmd, &mut shapes);
+            exe.execute(cmd, &mut shapes).unwrap();
         }
         assert_eq!(shapes.len(), 5);
     }

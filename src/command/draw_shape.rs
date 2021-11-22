@@ -50,11 +50,13 @@ impl<RenderType, ShapeType> Command<RenderType> for DrawShape<RenderType, ShapeT
 where
     ShapeType: 'static + Shape<RenderType> + Copy,
 {
-    fn execute(&mut self, shapes: &mut Shapes<RenderType>) {
+    fn execute(&self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
         shapes.insert(self.name.clone(), Box::new((self.shape).clone()));
+        Ok(())
     }
-    fn undo(&mut self, shapes: &mut Shapes<RenderType>) {
+    fn undo(&self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
         shapes.remove(&self.name);
+        Ok(())
     }
 }
 
@@ -66,30 +68,30 @@ mod tests {
 
     #[test]
     fn execute() {
-        let mut cmd1 = DrawShape::<DummyRenderer, _> {
+        let cmd1 = DrawShape::<DummyRenderer, _> {
             shape: Point::default(),
             name: "p1".to_string(),
             phantom: PhantomData,
         };
-        let mut cmd2 = DrawShape::<DummyRenderer, _> {
+        let cmd2 = DrawShape::<DummyRenderer, _> {
             shape: Rectangle::default(),
             name: "p2".to_string(),
             phantom: PhantomData,
         };
         let mut shapes = Shapes::default();
 
-        cmd1.execute(&mut shapes);
+        cmd1.execute(&mut shapes).unwrap();
         assert_eq!(
             format!("{:?}", shapes[&cmd1.name]),
             format!("{:?}", cmd1.shape),
         );
 
-        cmd1.undo(&mut shapes);
+        cmd1.undo(&mut shapes).unwrap();
         assert!(shapes.get(&cmd1.name).is_none());
         assert_eq!(shapes.len(), 0);
 
-        cmd1.execute(&mut shapes);
-        cmd2.execute(&mut shapes);
+        cmd1.execute(&mut shapes).unwrap();
+        cmd2.execute(&mut shapes).unwrap();
         assert_eq!(
             format!("{:?}", shapes[&cmd1.name]),
             format!("{:?}", cmd1.shape),
@@ -99,14 +101,14 @@ mod tests {
             format!("{:?}", cmd2.shape),
         );
 
-        cmd1.undo(&mut shapes);
+        cmd1.undo(&mut shapes).unwrap();
         assert_eq!(shapes.len(), 1);
         assert_eq!(
             format!("{:?}", shapes[&cmd2.name]),
             format!("{:?}", cmd2.shape),
         );
 
-        cmd2.undo(&mut shapes);
+        cmd2.undo(&mut shapes).unwrap();
         assert_eq!(shapes.len(), 0);
     }
 }

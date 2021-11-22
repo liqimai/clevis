@@ -1,5 +1,4 @@
 use super::*;
-use crate::command::DrawShape;
 use crate::shape::*;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -49,6 +48,8 @@ where
         this.register_parse_fn("line".to_lowercase(), parse_cmd::line::<RenderType>);
         this.register_parse_fn("circle".to_lowercase(), parse_cmd::circle::<RenderType>);
         this.register_parse_fn("square".to_lowercase(), parse_cmd::square::<RenderType>);
+
+        this.register_parse_fn("move".to_lowercase(), parse_cmd::move_by::<RenderType>);
 
         this
     }
@@ -154,8 +155,8 @@ pub mod tests {
         let commander = CliCommander::new(input, &mut output);
         let mut shapes = Shapes::new();
 
-        for mut cmd in commander {
-            cmd.execute(&mut shapes);
+        for cmd in commander {
+            cmd.execute(&mut shapes).unwrap();
         }
         let mut buff = Vec::<u8>::new();
         buff.render_shapes(&shapes).unwrap();

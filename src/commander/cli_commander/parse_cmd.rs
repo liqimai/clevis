@@ -1,4 +1,5 @@
 use super::*;
+use crate::command::*;
 
 pub fn point<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
 where
@@ -13,14 +14,14 @@ where
             r"(?P<y>(\+|-)?[[:digit:]]+)\s*$",
         )
         .join(r"\s+");
-        static ref RE_POINT: Regex = Regex::new(&PATTERN_CMD_POINT).unwrap();
+        static ref RE_CMD_POINT: Regex = Regex::new(&PATTERN_CMD_POINT).unwrap();
     }
     let err_msg = format!(
         r#"The pattern should be like "point <name> <x:i32> <y:i32>" but got {:?}"#,
         line
     );
 
-    let caps = RE_POINT.captures(&line).ok_or(&err_msg[..])?;
+    let caps = RE_CMD_POINT.captures(&line).ok_or(&err_msg[..])?;
     let name = caps.name("name").ok_or(&err_msg[..])?.as_str();
     let x = caps.name("x").ok_or(&err_msg[..])?.as_str().parse()?;
     let y = caps.name("y").ok_or(&err_msg[..])?.as_str().parse()?;
@@ -46,14 +47,14 @@ where
             r"(?P<h>(\+|-)?[[:digit:]]+)\s*$",
         )
         .join(r"\s+");
-        static ref RE_RECTANGLE: Regex = Regex::new(&PATTERN_CMD_RECTANGLE).unwrap();
+        static ref RE_CMD_RECTANGLE: Regex = Regex::new(&PATTERN_CMD_RECTANGLE).unwrap();
     }
     let err_msg = format!(
         r#"The pattern should be like "rectangle <name> <x:i32> <y:i32> <w:i32> <h:i32>" but got {:?}"#,
         line
     );
 
-    let caps = RE_RECTANGLE.captures(&line).ok_or(&err_msg[..])?;
+    let caps = RE_CMD_RECTANGLE.captures(&line).ok_or(&err_msg[..])?;
     let name = caps.name("name").ok_or(&err_msg[..])?.as_str();
     let x = caps.name("x").ok_or(&err_msg[..])?.as_str().parse()?;
     let y = caps.name("y").ok_or(&err_msg[..])?.as_str().parse()?;
@@ -85,14 +86,14 @@ where
             r"(?P<y2>(\+|-)?[[:digit:]]+)\s*$",
         )
         .join(r"\s+");
-        static ref RE_LINE: Regex = Regex::new(&PATTERN_CMD_LINE).unwrap();
+        static ref RE_CMD_LINE: Regex = Regex::new(&PATTERN_CMD_LINE).unwrap();
     }
     let err_msg = format!(
         r#"The pattern should be like "line <name> <x1:i32> <y1:i32> <x2:i32> <y2:i32>" but got {:?}"#,
         line
     );
 
-    let caps = RE_LINE.captures(&line).ok_or(&err_msg[..])?;
+    let caps = RE_CMD_LINE.captures(&line).ok_or(&err_msg[..])?;
     let name = caps.name("name").ok_or(&err_msg[..])?.as_str();
     let x1 = caps.name("x1").ok_or(&err_msg[..])?.as_str().parse()?;
     let y1 = caps.name("y1").ok_or(&err_msg[..])?.as_str().parse()?;
@@ -119,14 +120,14 @@ where
             r"(?P<r>(\+|-)?[[:digit:]]+)\s*$",
         )
         .join(r"\s+");
-        static ref RE_CIRCLE: Regex = Regex::new(&PATTERN_CMD_CIRCLE).unwrap();
+        static ref RE_CMD_CIRCLE: Regex = Regex::new(&PATTERN_CMD_CIRCLE).unwrap();
     }
     let err_msg = format!(
         r#"The pattern should be like "circle <name> <x:i32> <y:i32> <r:i32>" but got {:?}"#,
         line
     );
 
-    let caps = RE_CIRCLE.captures(&line).ok_or(&err_msg[..])?;
+    let caps = RE_CMD_CIRCLE.captures(&line).ok_or(&err_msg[..])?;
     let name = caps.name("name").ok_or(&err_msg[..])?.as_str();
     let x = caps.name("x").ok_or(&err_msg[..])?.as_str().parse()?;
     let y = caps.name("y").ok_or(&err_msg[..])?.as_str().parse()?;
@@ -155,14 +156,14 @@ where
             r"(?P<l>(\+|-)?[[:digit:]]+)\s*$",
         )
         .join(r"\s+");
-        static ref RE_SQUARE: Regex = Regex::new(&PATTERN_CMD_SQUARE).unwrap();
+        static ref RE_CMD_SQUARE: Regex = Regex::new(&PATTERN_CMD_SQUARE).unwrap();
     }
     let err_msg = format!(
         r#"The pattern should be like "square <name> <x:i32> <y:i32> <l:i32>" but got {:?}"#,
         line
     );
 
-    let caps = RE_SQUARE.captures(&line).ok_or(&err_msg[..])?;
+    let caps = RE_CMD_SQUARE.captures(&line).ok_or(&err_msg[..])?;
     let name = caps.name("name").ok_or(&err_msg[..])?.as_str();
     let x = caps.name("x").ok_or(&err_msg[..])?.as_str().parse()?;
     let y = caps.name("y").ok_or(&err_msg[..])?.as_str().parse()?;
@@ -175,6 +176,30 @@ where
             side: l,
         },
     )))
+}
+
+pub fn move_by<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>> {
+    lazy_static! {
+        static ref PATTERN_CMD_MOVE: String = vec!(
+            r"^\s*(?i:move)",
+            r"(?P<name>\w+)",
+            r"(?P<dx>(\+|-)?[[:digit:]]+)",
+            r"(?P<dy>(\+|-)?[[:digit:]]+)\s*$",
+        )
+        .join(r"\s+");
+        static ref RE_CMD_MOVE: Regex = Regex::new(&PATTERN_CMD_MOVE).unwrap();
+    }
+    let err_msg = format!(
+        r#"The pattern should be like "move <name> <dx:i32> <dy:i32>" but got {:?}"#,
+        line
+    );
+
+    let caps = RE_CMD_MOVE.captures(&line).ok_or(&err_msg[..])?;
+    let name = caps.name("name").ok_or(&err_msg[..])?.as_str();
+    let dx = caps.name("dx").ok_or(&err_msg[..])?.as_str().parse()?;
+    let dy = caps.name("dy").ok_or(&err_msg[..])?.as_str().parse()?;
+
+    Ok(Box::new(MoveBy::new(name.to_string(), dx, dy)))
 }
 
 #[cfg(test)]
@@ -242,5 +267,8 @@ pub mod tests {
             "square2 Square { corner: Point { x: 4, y: 5 }, side: 3 }"
         );
         assert!(!square::<DummyRenderer>("aaa bbb cc cc").is_ok());
+
+        let cmd_move = move_by::<DummyRenderer>("move aaa 3 -5").unwrap();
+        assert_eq!(format!("{}", cmd_move), "move aaa 3 -5");
     }
 }
