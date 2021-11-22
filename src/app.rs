@@ -66,7 +66,7 @@ where
 pub mod tests {
     use super::*;
     use crate::commander::tests::get_cmd_vec;
-    use crate::log::tests::DummyLogger;
+    use crate::log::DummyLogger;
     use crate::render::DummyRenderer;
 
     pub fn get_test_app() -> App<DummyLogger, DummyRenderer> {
