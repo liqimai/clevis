@@ -12,6 +12,19 @@ where
     phantom: PhantomData<RenderType>,
 }
 
+impl<RenderType, ShapeType> DrawShape<RenderType, ShapeType>
+where
+    ShapeType: Shape<RenderType>,
+{
+    pub fn new(name: String, shape: ShapeType) -> Self {
+        Self {
+            name,
+            shape,
+            phantom: PhantomData,
+        }
+    }
+}
+
 impl<RenderType, ShapeType> Default for DrawShape<RenderType, ShapeType>
 where
     ShapeType: Shape<RenderType> + Default,
