@@ -1,4 +1,4 @@
-use super::{Error, Renderer, Shape};
+use super::{Error, Renderable, Renderer, Shape};
 use std::fmt::Debug;
 use std::fs::File;
 use std::io;
@@ -53,7 +53,7 @@ impl Drop for FileRenderer {
     }
 }
 
-impl<T> Shape<FileRenderer> for T
+impl<T> Renderable<FileRenderer> for T
 where
     T: Debug,
 {

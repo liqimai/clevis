@@ -16,7 +16,7 @@ impl<T> Renderer<T> for DummyRenderer {
     }
 }
 
-impl<S: Debug> Shape<DummyRenderer> for S {
+impl<S: Debug> Renderable<DummyRenderer> for S {
     fn draw(&self, _render: &mut DummyRenderer) -> Result<(), Box<dyn Error>> {
         Ok(())
     }

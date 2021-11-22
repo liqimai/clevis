@@ -1,4 +1,4 @@
-use crate::shape::{Shape, Shapes};
+use crate::shape::{Renderable, Shape, Shapes};
 use std::borrow::Borrow;
 use std::error::Error;
 
@@ -34,7 +34,7 @@ pub mod tests {
     use std::fmt::Debug;
     use std::io::Write;
 
-    impl<S, W> Shape<W> for S
+    impl<S, W> Renderable<W> for S
     where
         S: Debug,
         W: Write,

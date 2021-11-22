@@ -1,4 +1,4 @@
-use super::{Error, Renderer, Shape};
+use super::{Error, Renderable, Renderer, Shape};
 use std::fmt::Debug;
 use std::fs::File;
 use std::io;
@@ -84,7 +84,7 @@ impl Drop for HtmlRenderer {
     }
 }
 
-impl<T> Shape<HtmlRenderer> for T
+impl<T> Renderable<HtmlRenderer> for T
 where
     T: Debug,
 {
