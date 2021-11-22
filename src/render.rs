@@ -98,7 +98,7 @@ pub mod tests {
             ),
             (
                 std::any::type_name::<Rectangle>().into(),
-                "Rectangle(Point { x: 0, y: 0 }, Point { x: 0, y: 0 })".into(),
+                "Rectangle { corner: Point { x: 0, y: 0 }, w: 0, h: 0 }".into(),
             ),
         ])
     }

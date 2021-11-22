@@ -16,7 +16,11 @@ pub struct Point {
 }
 
 #[derive(Debug, Copy, Clone, Default)]
-pub struct Rectangle(pub Point, pub Point);
+pub struct Rectangle {
+    pub corner: Point,
+    pub w: DataType,
+    pub h: DataType,
+}
 
 #[derive(Debug, Copy, Clone, Default)]
 pub struct Line(pub Point, pub Point);
