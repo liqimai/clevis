@@ -19,6 +19,8 @@ lazy_static! {
         ("circle", "circle <name> <x:i32> <y:i32> <r:i32>"),
         ("square", "square <name> <x:i32> <y:i32> <l:i32>"),
         ("move", "move <name> <dx:i32> <dy:i32>"),
+        ("undo", "undo"),
+        ("redo", "redo"),
     ]);
     pub static ref HELP_INFO: HashMap<&'static str, &'static str> = HashMap::from([
         ("point", "Draw point"),
@@ -27,6 +29,8 @@ lazy_static! {
         ("circle", "Draw circle"),
         ("square", "Draw square"),
         ("move", "Move a shape"),
+        ("undo", "Undo last command"),
+        ("redo", "Redo last undone command"),
     ]);
 }
 
@@ -237,6 +241,38 @@ pub fn move_by<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, B
     Ok(Box::new(MoveBy::new(name.to_string(), dx, dy)))
 }
 
+pub fn undo<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>> {
+    lazy_static! {
+        static ref PATTERN_CMD_UNDO: String = vec!(r"^\s*(?i:undo)\s*$",).join(r"\s+");
+        static ref RE_CMD_UNDO: Regex = Regex::new(&PATTERN_CMD_UNDO).unwrap();
+    }
+    let err_msg = format!(
+        err_msg_pattern!(),
+        READABLE_PATTERNS.get("undo").unwrap(),
+        line
+    );
+
+    RE_CMD_UNDO.captures(&line).ok_or(&err_msg[..])?;
+
+    Ok(Box::new(Control::Undo))
+}
+
+pub fn redo<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>> {
+    lazy_static! {
+        static ref PATTERN_CMD_REDO: String = vec!(r"^\s*(?i:redo)\s*$",).join(r"\s+");
+        static ref RE_CMD_REDO: Regex = Regex::new(&PATTERN_CMD_REDO).unwrap();
+    }
+    let err_msg = format!(
+        err_msg_pattern!(),
+        READABLE_PATTERNS.get("redo").unwrap(),
+        line
+    );
+
+    RE_CMD_REDO.captures(&line).ok_or(&err_msg[..])?;
+
+    Ok(Box::new(Control::Redo))
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -305,6 +341,11 @@ pub mod tests {
 
         let cmd_move = move_by::<DummyRenderer>("move aaa 3 -5").unwrap();
         assert_eq!(format!("{}", cmd_move), "move aaa 3 -5");
+
+        let cmd_move = undo::<DummyRenderer>("undo").unwrap();
+        assert_eq!(format!("{}", cmd_move), "undo");
+        let cmd_move = redo::<DummyRenderer>("redo").unwrap();
+        assert_eq!(format!("{}", cmd_move), "redo");
     }
 
     #[test]
@@ -333,5 +374,7 @@ pub mod tests {
         test!(circle, "circle");
         test!(square, "square");
         test!(move_by, "move");
+        test!(undo, "undo");
+        test!(redo, "redo");
     }
 }

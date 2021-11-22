@@ -1,6 +1,9 @@
-use super::*;
+use super::{Command, Error, Executor};
 use crate::shape::DataType;
+use crate::shape::Shapes;
+use std::fmt;
 
+#[derive(Clone)]
 pub struct MoveBy {
     name: String,
     dx: DataType,
@@ -17,19 +20,26 @@ impl fmt::Display for MoveBy {
     }
 }
 impl<RenderType> Command<RenderType> for MoveBy {
-    fn execute(&self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+    fn execute(&mut self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
         let err_msg = format!("Shape {:?} is not found.", self.name);
         let shape = shapes.get_mut(&self.name).ok_or(err_msg)?;
         shape.move_by(self.dx, self.dy);
 
         Ok(())
     }
-    fn undo(&self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+    fn undo(&mut self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
         let err_msg = format!("Shape {:?} is not found.", self.name);
         let shape = shapes.get_mut(&self.name).ok_or(err_msg)?;
         shape.move_by(-self.dx, -self.dy);
 
         Ok(())
+    }
+    fn after_execute(
+        &mut self,
+        _executor: &mut Executor<RenderType>,
+        _shapes: &mut Shapes<RenderType>,
+    ) -> Result<bool, Box<dyn Error>> {
+        Ok(true)
     }
 }
 

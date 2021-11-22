@@ -60,6 +60,8 @@ where
         self.register_parser("square".to_lowercase(), parse_cmd::square::<RenderType>);
 
         self.register_parser("move".to_lowercase(), parse_cmd::move_by::<RenderType>);
+        self.register_parser("undo".to_lowercase(), parse_cmd::undo::<RenderType>);
+        self.register_parser("redo".to_lowercase(), parse_cmd::redo::<RenderType>);
     }
 }
 impl<Reader, Stdout, Stderr, RenderType> CliCommander<Reader, Stdout, Stderr, RenderType>
@@ -189,7 +191,7 @@ pub mod tests {
         let commander = CliCommander::new(input, &mut stdout, &mut stderr);
         let mut shapes = Shapes::new();
 
-        for cmd in commander {
+        for mut cmd in commander {
             cmd.execute(&mut shapes).unwrap();
         }
         let mut buff = Vec::<u8>::new();
