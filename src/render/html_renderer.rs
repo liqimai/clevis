@@ -12,12 +12,26 @@ pub struct HtmlRenderer {
 }
 
 impl HtmlRenderer {
-    pub fn new(filename: &str) -> Result<HtmlRenderer, io::Error> {
-        Ok(HtmlRenderer {
+    pub fn new(filename: &str, auto_refresh: bool) -> Result<HtmlRenderer, io::Error> {
+        let render = HtmlRenderer {
             filename: filename.to_string(),
             file: File::create(filename)?,
-            auto_refresh: true,
-        })
+            auto_refresh,
+        };
+        if auto_refresh {
+            render.fresh()?;
+        }
+
+        Ok(render)
+    }
+    pub fn fresh(&self) -> Result<(), io::Error> {
+        if cfg!(macos) {
+            process::Command::new("open")
+                .args([&self.filename])
+                .output()?;
+        }
+
+        Ok(())
     }
 }
 
@@ -37,9 +51,7 @@ impl Renderer<HtmlRenderer> for HtmlRenderer {
         self.file.sync_all()?;
 
         if self.auto_refresh {
-            process::Command::new("open")
-                .args([&self.filename])
-                .output()?;
+            self.fresh()?;
         }
 
         Ok(())
@@ -97,7 +109,7 @@ pub mod tests {
         use std::fs::File;
 
         let screen_file_name = "crate::render::html_renderer::tests::test_html_renderer.html";
-        let mut render = HtmlRenderer::new(screen_file_name).unwrap();
+        let mut render = HtmlRenderer::new(screen_file_name, false).unwrap();
         render.auto_refresh = false;
 
         let full_answer = get_answers();
