@@ -7,6 +7,9 @@ impl<T, RenderType> Commander<RenderType> for T where
 {
 }
 
+mod cli_commander;
+pub use cli_commander::CliCommander;
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
