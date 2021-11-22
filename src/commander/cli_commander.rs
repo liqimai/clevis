@@ -29,6 +29,10 @@ where
     Reader: 'static + BufRead,
     Writer: Write,
     Point: Shape<RenderType>,
+    Rectangle: Shape<RenderType>,
+    Line: Shape<RenderType>,
+    Circle: Shape<RenderType>,
+    Square: Shape<RenderType>,
 {
     pub fn new(reader: Reader, writer: Writer) -> Self {
         let mut this = Self {
@@ -37,7 +41,14 @@ where
             parse_fn: HashMap::new(),
             phantom: PhantomData,
         };
-        this.register_parse_fn("Point".to_string(), parse_cmd::point::<RenderType>);
+        this.register_parse_fn("point".to_lowercase(), parse_cmd::point::<RenderType>);
+        this.register_parse_fn(
+            "rectangle".to_lowercase(),
+            parse_cmd::rectangle::<RenderType>,
+        );
+        this.register_parse_fn("line".to_lowercase(), parse_cmd::line::<RenderType>);
+        this.register_parse_fn("circle".to_lowercase(), parse_cmd::circle::<RenderType>);
+        this.register_parse_fn("square".to_lowercase(), parse_cmd::square::<RenderType>);
 
         this
     }
@@ -61,10 +72,14 @@ where
 
         let err_msg = "usage: command args ...";
         let caps = RE_POINT.captures(&line).ok_or(&err_msg[..])?;
-        let cmd_name = caps.name("cmd_name").ok_or(&err_msg[..])?.as_str();
+        let cmd_name = caps
+            .name("cmd_name")
+            .ok_or(&err_msg[..])?
+            .as_str()
+            .to_lowercase();
 
         let err_msg = format!("{:?} is not a valid command.", cmd_name);
-        let parse_fn = self.parse_fn.get(cmd_name).ok_or(&err_msg[..])?;
+        let parse_fn = self.parse_fn.get(&cmd_name).ok_or(&err_msg[..])?;
 
         parse_fn(&line)
     }
@@ -89,6 +104,10 @@ where
     Writer: Write,
     RenderType: 'static,
     Point: Shape<RenderType>,
+    Rectangle: Shape<RenderType>,
+    Line: Shape<RenderType>,
+    Circle: Shape<RenderType>,
+    Square: Shape<RenderType>,
 {
     type Item = Box<dyn Command<RenderType>>;
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
@@ -111,47 +130,55 @@ where
     }
 }
 
-mod parse_cmd {
-    use super::*;
-
-    pub fn point<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
-    where
-        RenderType: 'static,
-        Point: Shape<RenderType>,
-    {
-        lazy_static! {
-            static ref PATTERN_CMD_POINT: String =
-                r"^\s*Point (?P<name>\w+) (?P<x>[[:digit:]]+) (?P<y>[[:digit:]]+)\s*$"
-                    .split(' ')
-                    .collect::<Vec<_>>()
-                    .join(r"\s*");
-            static ref RE_POINT: Regex = Regex::new(&PATTERN_CMD_POINT).unwrap();
-        }
-        let err_msg = format!(
-            r#"The pattern should be like "Point <name> <x> <y>" but got {:?}"#,
-            line
-        );
-
-        let caps = RE_POINT.captures(&line).ok_or(&err_msg[..])?;
-        let name = caps.name("name").ok_or(&err_msg[..])?.as_str();
-        let x = caps.name("x").ok_or(&err_msg[..])?.as_str().parse()?;
-        let y = caps.name("y").ok_or(&err_msg[..])?.as_str().parse()?;
-
-        Ok(Box::new(DrawShape::<RenderType, Point>::new(
-            name.to_string(),
-            Point { x, y },
-        )))
-    }
-}
+mod parse_cmd;
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::render::DummyRenderer;
+    use crate::render::Renderer;
+    use std::collections::HashSet;
+    use std::str;
 
     #[test]
-    fn test_from_string() {
-        let cmd = parse_cmd::point::<DummyRenderer>("Point p1 2 3").unwrap();
-        assert_eq!(format!("{}", cmd), "p1 Point { x: 2, y: 3 }");
+    fn test_draw_shape() {
+        let input = b"\
+        point p1 0 0\n\
+        rectangle rect 2 3 4 5\n\
+        line l1 2 3 4 5\n\
+        circle cic 23 4 45\n\
+        square sq 32 34 56\n\
+        foo\n\
+        bar foo";
+        let input = io::BufReader::new(&input[..]);
+        let mut output = Vec::<u8>::new();
+        let commander = CliCommander::new(input, &mut output);
+        let mut shapes = Shapes::new();
+
+        for mut cmd in commander {
+            cmd.execute(&mut shapes);
+        }
+        let mut buff = Vec::<u8>::new();
+        buff.render_shapes(&shapes).unwrap();
+
+        // check
+        let correct_output = "\
+            > > > > > > \"foo\" is not a valid command.\n\
+            > \"bar\" is not a valid command.\n\
+            > ";
+        assert_eq!(str::from_utf8(&output).unwrap(), correct_output);
+
+        let correct_buff = HashSet::from([
+            "",
+            "cic Circle { center: Point { x: 23, y: 4 }, radius: 45 }",
+            "rect Rectangle { corner: Point { x: 2, y: 3 }, w: 4, h: 5 }",
+            "l1 Line(Point { x: 2, y: 3 }, Point { x: 4, y: 5 })",
+            "p1 Point { x: 0, y: 0 }",
+            "sq Square { corner: Point { x: 32, y: 34 }, side: 56 }",
+        ]);
+        let buff = io::BufReader::new(&buff[..]);
+        for line in buff.lines() {
+            let line = line.unwrap();
+            assert!(correct_buff.contains(&line[..]));
+        }
     }
 }
