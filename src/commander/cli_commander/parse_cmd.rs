@@ -1,5 +1,34 @@
 use super::*;
 use crate::command::*;
+use std::collections::HashMap;
+
+macro_rules! err_msg_pattern {
+    () => {
+        "The pattern should be like {:?} but got {:?}"
+    };
+}
+
+lazy_static! {
+    pub static ref READABLE_PATTERNS: HashMap<&'static str, &'static str> = HashMap::from([
+        ("point", "point <name> <x:i32> <y:i32>"),
+        (
+            "rectangle",
+            "rectangle <name> <x:i32> <y:i32> <w:i32> <h:i32>"
+        ),
+        ("line", "line <name> <x1:i32> <y1:i32> <x2:i32> <y2:i32>"),
+        ("circle", "circle <name> <x:i32> <y:i32> <r:i32>"),
+        ("square", "square <name> <x:i32> <y:i32> <l:i32>"),
+        ("move", "move <name> <dx:i32> <dy:i32>"),
+    ]);
+    pub static ref HELP_INFO: HashMap<&'static str, &'static str> = HashMap::from([
+        ("point", "Draw point"),
+        ("rectangle", "Draw rectangle"),
+        ("line", "Draw line"),
+        ("circle", "Draw circle"),
+        ("square", "Draw square"),
+        ("move", "Move a shape"),
+    ]);
+}
 
 pub fn point<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
 where
@@ -17,7 +46,8 @@ where
         static ref RE_CMD_POINT: Regex = Regex::new(&PATTERN_CMD_POINT).unwrap();
     }
     let err_msg = format!(
-        r#"The pattern should be like "point <name> <x:i32> <y:i32>" but got {:?}"#,
+        err_msg_pattern!(),
+        READABLE_PATTERNS.get("point").unwrap(),
         line
     );
 
@@ -50,7 +80,8 @@ where
         static ref RE_CMD_RECTANGLE: Regex = Regex::new(&PATTERN_CMD_RECTANGLE).unwrap();
     }
     let err_msg = format!(
-        r#"The pattern should be like "rectangle <name> <x:i32> <y:i32> <w:i32> <h:i32>" but got {:?}"#,
+        err_msg_pattern!(),
+        READABLE_PATTERNS.get("rectangle").unwrap(),
         line
     );
 
@@ -89,7 +120,8 @@ where
         static ref RE_CMD_LINE: Regex = Regex::new(&PATTERN_CMD_LINE).unwrap();
     }
     let err_msg = format!(
-        r#"The pattern should be like "line <name> <x1:i32> <y1:i32> <x2:i32> <y2:i32>" but got {:?}"#,
+        err_msg_pattern!(),
+        READABLE_PATTERNS.get("line").unwrap(),
         line
     );
 
@@ -123,7 +155,8 @@ where
         static ref RE_CMD_CIRCLE: Regex = Regex::new(&PATTERN_CMD_CIRCLE).unwrap();
     }
     let err_msg = format!(
-        r#"The pattern should be like "circle <name> <x:i32> <y:i32> <r:i32>" but got {:?}"#,
+        err_msg_pattern!(),
+        READABLE_PATTERNS.get("circle").unwrap(),
         line
     );
 
@@ -159,7 +192,8 @@ where
         static ref RE_CMD_SQUARE: Regex = Regex::new(&PATTERN_CMD_SQUARE).unwrap();
     }
     let err_msg = format!(
-        r#"The pattern should be like "square <name> <x:i32> <y:i32> <l:i32>" but got {:?}"#,
+        err_msg_pattern!(),
+        READABLE_PATTERNS.get("square").unwrap(),
         line
     );
 
@@ -190,7 +224,8 @@ pub fn move_by<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, B
         static ref RE_CMD_MOVE: Regex = Regex::new(&PATTERN_CMD_MOVE).unwrap();
     }
     let err_msg = format!(
-        r#"The pattern should be like "move <name> <dx:i32> <dy:i32>" but got {:?}"#,
+        err_msg_pattern!(),
+        READABLE_PATTERNS.get("move").unwrap(),
         line
     );
 
@@ -270,5 +305,33 @@ pub mod tests {
 
         let cmd_move = move_by::<DummyRenderer>("move aaa 3 -5").unwrap();
         assert_eq!(format!("{}", cmd_move), "move aaa 3 -5");
+    }
+
+    #[test]
+    fn test_from_string_error() {
+        let non_sense = "aaaaa";
+
+        macro_rules! test {
+            ($cmd: ident, $key: expr) => {
+                match $cmd::<DummyRenderer>(non_sense) {
+                    Err(error) => assert_eq!(
+                        format!("{}", error),
+                        format!(
+                            err_msg_pattern!(),
+                            *READABLE_PATTERNS.get($key).unwrap(),
+                            non_sense
+                        )
+                    ),
+                    Ok(_) => panic!(),
+                }
+            };
+        }
+
+        test!(point, "point");
+        test!(rectangle, "rectangle");
+        test!(line, "line");
+        test!(circle, "circle");
+        test!(square, "square");
+        test!(move_by, "move");
     }
 }

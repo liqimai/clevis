@@ -163,7 +163,8 @@ where
     }
 }
 
-mod parse_cmd;
+pub mod parse_cmd;
+pub use parse_cmd::{HELP_INFO, READABLE_PATTERNS};
 
 #[cfg(test)]
 pub mod tests {

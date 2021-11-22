@@ -1,13 +1,15 @@
 use std::error::Error;
 
 use clevis::app::App;
+use clevis::commander::cli_commander::HELP_INFO;
 use clevis::commander::CliCommander;
 use clevis::log::DummyLogger;
 use clevis::render::HtmlRenderer;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    if cfg!(target_os = "macos") {
-        println!("I'm running on a macos machine!");
+    println!("Available commands:");
+    for (cmd, info) in HELP_INFO.iter() {
+        println!("    {:15}{}", cmd, info);
     }
 
     let mut app = App::new(DummyLogger, HtmlRenderer::new("screen.html", true).unwrap());

@@ -7,7 +7,7 @@ impl<T, RenderType> Commander<RenderType> for T where
 {
 }
 
-mod cli_commander;
+pub mod cli_commander;
 pub use cli_commander::CliCommander;
 
 #[cfg(test)]
