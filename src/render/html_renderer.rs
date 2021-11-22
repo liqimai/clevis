@@ -25,7 +25,7 @@ impl HtmlRenderer {
         Ok(render)
     }
     pub fn fresh(&self) -> Result<(), io::Error> {
-        if cfg!(macos) {
+        if cfg!(target_os = "macos") {
             process::Command::new("open")
                 .args([&self.filename])
                 .output()?;
