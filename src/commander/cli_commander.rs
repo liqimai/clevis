@@ -8,53 +8,68 @@ use std::io;
 use std::io::{BufRead, Write};
 use std::marker::PhantomData;
 
-pub struct CliCommander<Reader, Writer, RenderType>
+pub struct CliCommander<Reader, Stdout, Stderr, RenderType>
 where
     Reader: BufRead,
-    Writer: Write,
+    Stdout: Write,
+    Stderr: Write,
 {
     // iterator over lines of the reader
     lines: io::Lines<Reader>,
-    writer: Writer,
+    stdout: Stdout,
+    stderr: Stderr,
     parse_fn: HashMap<String, ParseFn<RenderType>>,
     phantom: PhantomData<RenderType>,
 }
 
 type ParseFn<RenderType> = fn(&str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>;
 
-impl<Reader, Writer, RenderType> CliCommander<Reader, Writer, RenderType>
+impl<Reader, Stdout, Stderr, RenderType> CliCommander<Reader, Stdout, Stderr, RenderType>
 where
     RenderType: 'static,
     Reader: 'static + BufRead,
-    Writer: Write,
+    Stdout: Write,
+    Stderr: Write,
     Point: Shape<RenderType>,
     Rectangle: Shape<RenderType>,
     Line: Shape<RenderType>,
     Circle: Shape<RenderType>,
     Square: Shape<RenderType>,
 {
-    pub fn new(reader: Reader, writer: Writer) -> Self {
+    pub fn new(reader: Reader, stdout: Stdout, stderr: Stderr) -> Self {
         let mut this = Self {
             lines: reader.lines(),
-            writer,
+            stdout,
+            stderr,
             parse_fn: HashMap::new(),
             phantom: PhantomData,
         };
-        this.register_parse_fn("point".to_lowercase(), parse_cmd::point::<RenderType>);
-        this.register_parse_fn(
-            "rectangle".to_lowercase(),
-            parse_cmd::rectangle::<RenderType>,
-        );
-        this.register_parse_fn("line".to_lowercase(), parse_cmd::line::<RenderType>);
-        this.register_parse_fn("circle".to_lowercase(), parse_cmd::circle::<RenderType>);
-        this.register_parse_fn("square".to_lowercase(), parse_cmd::square::<RenderType>);
-
-        this.register_parse_fn("move".to_lowercase(), parse_cmd::move_by::<RenderType>);
+        this.register_parse_fn();
 
         this
     }
 
-    pub fn register_parse_fn(
+    fn register_parse_fn(&mut self) {
+        self.register_parser("point".to_lowercase(), parse_cmd::point::<RenderType>);
+        self.register_parser(
+            "rectangle".to_lowercase(),
+            parse_cmd::rectangle::<RenderType>,
+        );
+        self.register_parser("line".to_lowercase(), parse_cmd::line::<RenderType>);
+        self.register_parser("circle".to_lowercase(), parse_cmd::circle::<RenderType>);
+        self.register_parser("square".to_lowercase(), parse_cmd::square::<RenderType>);
+
+        self.register_parser("move".to_lowercase(), parse_cmd::move_by::<RenderType>);
+    }
+}
+impl<Reader, Stdout, Stderr, RenderType> CliCommander<Reader, Stdout, Stderr, RenderType>
+where
+    RenderType: 'static,
+    Reader: 'static + BufRead,
+    Stdout: Write,
+    Stderr: Write,
+{
+    pub fn register_parser(
         &mut self,
         cmd_name: String,
         func: ParseFn<RenderType>,
@@ -86,11 +101,11 @@ where
     }
 
     fn next_line(&mut self) -> Option<Result<String, io::Error>> {
-        match self.writer.write_all(b"> ") {
+        match self.stdout.write_all(b"> ") {
             Err(error) => return Some(Err(error)),
             Ok(_) => (),
         }
-        match self.writer.flush() {
+        match self.stdout.flush() {
             Err(error) => return Some(Err(error)),
             Ok(_) => (),
         }
@@ -99,10 +114,27 @@ where
     }
 }
 
-impl<Reader, Writer, RenderType> Iterator for CliCommander<Reader, Writer, RenderType>
+impl<RenderType> Default
+    for CliCommander<io::BufReader<io::Stdin>, io::Stdout, io::Stderr, RenderType>
+where
+    RenderType: 'static,
+    Point: Shape<RenderType>,
+    Rectangle: Shape<RenderType>,
+    Line: Shape<RenderType>,
+    Circle: Shape<RenderType>,
+    Square: Shape<RenderType>,
+{
+    fn default() -> Self {
+        Self::new(io::BufReader::new(io::stdin()), io::stdout(), io::stderr())
+    }
+}
+
+impl<Reader, Stdout, Stderr, RenderType> Iterator
+    for CliCommander<Reader, Stdout, Stderr, RenderType>
 where
     Reader: 'static + BufRead,
-    Writer: Write,
+    Stdout: Write,
+    Stderr: Write,
     RenderType: 'static,
     Point: Shape<RenderType>,
     Rectangle: Shape<RenderType>,
@@ -116,7 +148,7 @@ where
             match self.parse_line(line) {
                 Ok(cmd) => return Some(cmd),
                 Err(error) => {
-                    let res = self.writer.write_all(format!("{}\n", error).as_bytes());
+                    let res = self.stderr.write_all(format!("{}\n", error).as_bytes());
                     match res {
                         Err(error) => io::stdout()
                             .lock()
@@ -151,8 +183,9 @@ pub mod tests {
         foo\n\
         bar foo";
         let input = io::BufReader::new(&input[..]);
-        let mut output = Vec::<u8>::new();
-        let commander = CliCommander::new(input, &mut output);
+        let mut stdout = Vec::<u8>::new();
+        let mut stderr = Vec::<u8>::new();
+        let commander = CliCommander::new(input, &mut stdout, &mut stderr);
         let mut shapes = Shapes::new();
 
         for cmd in commander {
@@ -162,11 +195,14 @@ pub mod tests {
         buff.render_shapes(&shapes).unwrap();
 
         // check
-        let correct_output = "\
-            > > > > > > \"foo\" is not a valid command.\n\
-            > \"bar\" is not a valid command.\n\
-            > ";
-        assert_eq!(str::from_utf8(&output).unwrap(), correct_output);
+        let correct_stdout = "> > > > > > > > ";
+        assert_eq!(str::from_utf8(&stdout).unwrap(), correct_stdout);
+
+        let correct_stderr = "\
+            \"foo\" is not a valid command.\n\
+            \"bar\" is not a valid command.\n\
+            ";
+        assert_eq!(str::from_utf8(&stderr).unwrap(), correct_stderr);
 
         let correct_buff = HashSet::from([
             "",

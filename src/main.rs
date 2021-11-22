@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::io;
 
 use clevis::app::App;
 use clevis::commander::CliCommander;
@@ -12,7 +11,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let mut app = App::new(DummyLogger, HtmlRenderer::new("screen.html", true).unwrap());
-    let commander = CliCommander::new(io::BufReader::new(io::stdin()), io::stdout());
+    let commander = CliCommander::default();
 
     app.run(commander);
 
