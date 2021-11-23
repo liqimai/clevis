@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("    {:15}{}", cmd, info);
     }
 
-    let mut app = App::new(DummyLogger, HtmlRenderer::new("screen.html", true).unwrap());
+    let mut app = App::new(DummyLogger, HtmlRenderer::new("screen", true).unwrap());
     let commander = CliCommander::default();
 
     app.run(commander);
