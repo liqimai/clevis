@@ -40,8 +40,8 @@ pub trait Command<RenderType>: fmt::Display {
 mod draw_shape;
 pub use draw_shape::DrawShape;
 
-// mod delete;
-// pub use delete::Delete;
+mod delete;
+pub use delete::Delete;
 
 mod move_by;
 pub use move_by::MoveBy;

@@ -62,6 +62,7 @@ where
         self.register_parser("move".to_lowercase(), parse_cmd::move_by::<RenderType>);
         self.register_parser("undo".to_lowercase(), parse_cmd::undo::<RenderType>);
         self.register_parser("redo".to_lowercase(), parse_cmd::redo::<RenderType>);
+        self.register_parser("delete".to_lowercase(), parse_cmd::delete::<RenderType>);
     }
 }
 impl<Reader, Stdout, Stderr, RenderType> CliCommander<Reader, Stdout, Stderr, RenderType>

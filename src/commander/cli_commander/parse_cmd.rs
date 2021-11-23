@@ -21,6 +21,7 @@ lazy_static! {
         ("move", "move <name> <dx:i32> <dy:i32>"),
         ("undo", "undo"),
         ("redo", "redo"),
+        ("delete", "delete <name>"),
     ]);
     pub static ref HELP_INFO: HashMap<&'static str, &'static str> = HashMap::from([
         ("point", "Draw point"),
@@ -31,6 +32,7 @@ lazy_static! {
         ("move", "Move a shape"),
         ("undo", "Undo last command"),
         ("redo", "Redo last undone command"),
+        ("delete", "Delete a shape by its name"),
     ]);
 }
 
@@ -273,6 +275,27 @@ pub fn redo<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<
     Ok(Box::new(Control::Redo))
 }
 
+pub fn delete<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
+where
+    RenderType: 'static,
+{
+    lazy_static! {
+        static ref PATTERN_CMD_DELETE: String =
+            vec!(r"^\s*(?i:delete)", r"(?P<name>\w+)\s*$",).join(r"\s+");
+        static ref RE_CMD_DELETE: Regex = Regex::new(&PATTERN_CMD_DELETE).unwrap();
+    }
+    let err_msg = format!(
+        err_msg_pattern!(),
+        READABLE_PATTERNS.get("delete").unwrap(),
+        line
+    );
+
+    let caps = RE_CMD_DELETE.captures(&line).ok_or(&err_msg[..])?;
+    let name = caps.name("name").ok_or(&err_msg[..])?.as_str();
+
+    Ok(Box::new(Delete::new(name.to_string())))
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -342,10 +365,13 @@ pub mod tests {
         let cmd_move = move_by::<DummyRenderer>("move aaa 3 -5").unwrap();
         assert_eq!(format!("{}", cmd_move), "move aaa 3 -5");
 
-        let cmd_move = undo::<DummyRenderer>("undo").unwrap();
-        assert_eq!(format!("{}", cmd_move), "undo");
-        let cmd_move = redo::<DummyRenderer>("redo").unwrap();
-        assert_eq!(format!("{}", cmd_move), "redo");
+        let undo = undo::<DummyRenderer>("undo").unwrap();
+        assert_eq!(format!("{}", undo), "undo");
+        let redo = redo::<DummyRenderer>("redo").unwrap();
+        assert_eq!(format!("{}", redo), "redo");
+
+        let delete = delete::<DummyRenderer>("delete name").unwrap();
+        assert_eq!(format!("{}", delete), r#"Delete "name" with deleted None"#);
     }
 
     #[test]
@@ -376,5 +402,6 @@ pub mod tests {
         test!(move_by, "move");
         test!(undo, "undo");
         test!(redo, "redo");
+        test!(delete, "delete");
     }
 }
