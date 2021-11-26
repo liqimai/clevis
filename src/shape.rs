@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Debug;
 
-pub trait Shape<RenderType>: Renderable<RenderType> + Movable + Debug {}
-impl<T, RenderType> Shape<RenderType> for T where T: Renderable<RenderType> + Movable + Debug {}
+pub trait Shape<RenderType>: Renderable<RenderType> + Movable + Debug + Send {}
+impl<T, RenderType> Shape<RenderType> for T where T: Renderable<RenderType> + Movable + Debug + Send {}
 
 pub trait Renderable<RenderType> {
     fn draw(&self, render: &mut RenderType) -> Result<(), Box<dyn Error>>;
