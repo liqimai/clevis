@@ -1,5 +1,5 @@
 # Clevis
-An __incomplete__ implementation for group project of PolyU COMP 2021 in rust programming language. You may read [project_description.pdf](./project_description.pdf) for more detailed  information. My main goal of doing this project is to practice all kinds of language features of rust. 
+An __incomplete__ implementation for group project of HK PolyU COMP 2021 in rust programming language. You may read [project_description.pdf](./project_description.pdf) for more detailed  information. My main goal of doing this project is to practice all kinds of language features of rust. 
 
 # Example Usage
 Run the program by `cargo run`:
