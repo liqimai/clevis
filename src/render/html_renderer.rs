@@ -108,6 +108,10 @@ impl HtmlRenderer {
                 .args([self.html_file_path()])
                 .output()?;
         }
+        if cfg!(target_os = "windows") {
+            process::Command::new(self.html_file_path())
+                .output()?;
+        }
 
         Ok(())
     }
@@ -136,19 +140,8 @@ impl Renderer<HtmlRenderer> for HtmlRenderer {
         name: &str,
         shape: &dyn Shape<HtmlRenderer>,
     ) -> Result<(), Box<dyn Error>> {
-        // let name = format!(
-        //     "\
-        //     \t<tr>\n\
-        //     \t\t<td>{}</td>\n\
-        //     \t\t",
-        //     name
-        // );
-        // self.file.write_all(name.as_bytes())?;
-
         shape.draw(self)?;
         self.file.write_all(format!(" // {} \n", name).as_bytes())?;
-
-        // self.file.write_all(b"\n\t</tr>\n")?;
 
         Ok(())
     }
@@ -160,19 +153,6 @@ impl Drop for HtmlRenderer {
         std::fs::remove_file(self.html_file_path()).unwrap();
     }
 }
-
-// impl<T> Renderable<HtmlRenderer> for T
-// where
-//     T: Debug,
-// {
-//     fn draw(&self, render: &mut HtmlRenderer) -> Result<(), Box<dyn Error>> {
-//         render
-//             .file
-//             .write_all(format!("<td>{:?}</td>", &self).as_bytes())?;
-
-//         Ok(())
-//     }
-// }
 
 impl Renderable<HtmlRenderer> for Point {
     fn draw(&self, render: &mut HtmlRenderer) -> Result<(), Box<dyn Error>> {
