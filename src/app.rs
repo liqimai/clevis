@@ -71,7 +71,7 @@ where
             while let Ok(_) = rx.recv() {
                 while let Ok(_) = rx.try_recv() {}
                 match render() {
-                    Err(error) => eprintln!("{}", error),
+                    Err(error) => log::error!("{}", error),
                     Ok(_) => (),
                 };
             }
@@ -85,7 +85,7 @@ where
             for cmd in commander {
                 self.logger.log(&cmd.to_string());
                 match self.execute(cmd) {
-                    Err(error) => eprintln!("{}", error),
+                    Err(error) => log::error!("{}", error),
                     Ok(()) => (),
                 }
                 render_signal.send(()).unwrap();
@@ -96,11 +96,11 @@ where
             for cmd in commander {
                 self.logger.log(&cmd.to_string());
                 match self.execute(cmd) {
-                    Err(error) => eprintln!("{}", error),
+                    Err(error) => log::error!("{}", error),
                     Ok(()) => (),
                 }
                 match self.render_shapes() {
-                    Err(error) => eprintln!("{}", error),
+                    Err(error) => log::error!("{}", error),
                     Ok(()) => (),
                 }
             }
