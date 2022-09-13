@@ -1,4 +1,4 @@
-use super::{Error, Renderable, Renderer, Shape};
+use super::{Error, Renderer, Shape};
 use crate::shape::*;
 use std::fs::File;
 use std::io;
@@ -117,7 +117,7 @@ impl HtmlRenderer {
     }
 }
 
-impl Renderer<HtmlRenderer> for HtmlRenderer {
+impl Renderer for HtmlRenderer {
     fn init_frame(&mut self) -> Result<(), Box<dyn Error>> {
         self.file = File::create(self.js_file_path())?;
         self.file.rewind()?;
@@ -138,11 +138,62 @@ impl Renderer<HtmlRenderer> for HtmlRenderer {
     fn render(
         &mut self,
         name: &str,
-        shape: &dyn Shape<HtmlRenderer>,
+        shape: &dyn Shape,
     ) -> Result<(), Box<dyn Error>> {
-        shape.draw(self)?;
+        shape.draw_on(self)?;
         self.file.write_all(format!(" // {} \n", name).as_bytes())?;
 
+        Ok(())
+    }
+
+    fn draw_point(&mut self, point: &Point) -> Result<(), Box<dyn Error>> {
+        self.file.write_all(
+            format!("point({}, {});", point.x, point.y).as_bytes()
+        )?;
+        Ok(())
+    }
+
+    fn draw_line(&mut self, line: &Line) -> Result<(), Box<dyn Error>> {
+        self.file.write_all(
+            format!(
+                "line({}, {}, {}, {});",
+                line.0.x, line.0.y, line.1.x, line.1.y
+            )
+            .as_bytes(),
+        )?;
+        Ok(())
+    }
+    
+    fn draw_rectangle(&mut self, rectangle: &Rectangle) -> Result<(), Box<dyn Error>> {
+        self.file.write_all(
+            format!(
+                "rectangle({}, {}, {}, {});",
+                rectangle.corner.x, rectangle.corner.y, rectangle.w, rectangle.h
+            )
+            .as_bytes(),
+        )?;
+        Ok(())
+    }
+    
+    fn draw_circle(&mut self, circle: &Circle) -> Result<(), Box<dyn Error>> {
+        self.file.write_all(
+            format!(
+                "circle({}, {}, {});",
+                circle.center.x, circle.center.y, circle.radius
+            )
+            .as_bytes(),
+        )?;
+        Ok(())
+    }
+    
+    fn draw_square(&mut self, square: &Square) -> Result<(), Box<dyn Error>> {
+        self.file.write_all(
+            format!(
+                "square({}, {}, {});",
+                square.corner.x, square.corner.y, square.side
+            )
+            .as_bytes(),
+        )?;
         Ok(())
     }
 }
@@ -151,63 +202,6 @@ impl Drop for HtmlRenderer {
     fn drop(&mut self) {
         std::fs::remove_file(self.js_file_path()).unwrap();
         std::fs::remove_file(self.html_file_path()).unwrap();
-    }
-}
-
-impl Renderable<HtmlRenderer> for Point {
-    fn draw(&self, render: &mut HtmlRenderer) -> Result<(), Box<dyn Error>> {
-        render
-            .file
-            .write_all(format!("point({}, {});", self.x, self.y).as_bytes())?;
-        Ok(())
-    }
-}
-impl Renderable<HtmlRenderer> for Line {
-    fn draw(&self, render: &mut HtmlRenderer) -> Result<(), Box<dyn Error>> {
-        render.file.write_all(
-            format!(
-                "line({}, {}, {}, {});",
-                self.0.x, self.0.y, self.1.x, self.1.y
-            )
-            .as_bytes(),
-        )?;
-        Ok(())
-    }
-}
-impl Renderable<HtmlRenderer> for Rectangle {
-    fn draw(&self, render: &mut HtmlRenderer) -> Result<(), Box<dyn Error>> {
-        render.file.write_all(
-            format!(
-                "rectangle({}, {}, {}, {});",
-                self.corner.x, self.corner.y, self.w, self.h
-            )
-            .as_bytes(),
-        )?;
-        Ok(())
-    }
-}
-impl Renderable<HtmlRenderer> for Circle {
-    fn draw(&self, render: &mut HtmlRenderer) -> Result<(), Box<dyn Error>> {
-        render.file.write_all(
-            format!(
-                "circle({}, {}, {});",
-                self.center.x, self.center.y, self.radius
-            )
-            .as_bytes(),
-        )?;
-        Ok(())
-    }
-}
-impl Renderable<HtmlRenderer> for Square {
-    fn draw(&self, render: &mut HtmlRenderer) -> Result<(), Box<dyn Error>> {
-        render.file.write_all(
-            format!(
-                "square({}, {}, {});",
-                self.corner.x, self.corner.y, self.side
-            )
-            .as_bytes(),
-        )?;
-        Ok(())
     }
 }
 

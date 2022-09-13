@@ -6,9 +6,8 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::io;
 use std::io::{BufRead, Write};
-use std::marker::PhantomData;
 
-pub struct CliCommander<Reader, Stdout, Stderr, RenderType>
+pub struct CliCommander<Reader, Stdout, Stderr>
 where
     Reader: BufRead,
     Stdout: Write,
@@ -18,23 +17,21 @@ where
     lines: io::Lines<Reader>,
     stdout: Stdout,
     stderr: Stderr,
-    parse_fn: HashMap<String, ParseFn<RenderType>>,
-    phantom: PhantomData<RenderType>,
+    parse_fn: HashMap<String, ParseFn>,
 }
 
-type ParseFn<RenderType> = fn(&str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>;
+type ParseFn = fn(&str) -> Result<Box<dyn Command>, Box<dyn Error>>;
 
-impl<Reader, Stdout, Stderr, RenderType> CliCommander<Reader, Stdout, Stderr, RenderType>
+impl<Reader, Stdout, Stderr> CliCommander<Reader, Stdout, Stderr>
 where
-    RenderType: 'static,
     Reader: 'static + BufRead,
     Stdout: Write,
     Stderr: Write,
-    Point: Shape<RenderType>,
-    Rectangle: Shape<RenderType>,
-    Line: Shape<RenderType>,
-    Circle: Shape<RenderType>,
-    Square: Shape<RenderType>,
+    Point: Shape,
+    Rectangle: Shape,
+    Line: Shape,
+    Circle: Shape,
+    Square: Shape,
 {
     pub fn new(reader: Reader, stdout: Stdout, stderr: Stderr) -> Self {
         let mut this = Self {
@@ -42,7 +39,6 @@ where
             stdout,
             stderr,
             parse_fn: HashMap::new(),
-            phantom: PhantomData,
         };
         this.register_parse_fn();
 
@@ -50,24 +46,23 @@ where
     }
 
     fn register_parse_fn(&mut self) {
-        self.register_parser("point".to_lowercase(), parse_cmd::point::<RenderType>);
+        self.register_parser("point".to_lowercase(), parse_cmd::point);
         self.register_parser(
             "rectangle".to_lowercase(),
-            parse_cmd::rectangle::<RenderType>,
+            parse_cmd::rectangle,
         );
-        self.register_parser("line".to_lowercase(), parse_cmd::line::<RenderType>);
-        self.register_parser("circle".to_lowercase(), parse_cmd::circle::<RenderType>);
-        self.register_parser("square".to_lowercase(), parse_cmd::square::<RenderType>);
+        self.register_parser("line".to_lowercase(), parse_cmd::line);
+        self.register_parser("circle".to_lowercase(), parse_cmd::circle);
+        self.register_parser("square".to_lowercase(), parse_cmd::square);
 
-        self.register_parser("move".to_lowercase(), parse_cmd::move_by::<RenderType>);
-        self.register_parser("undo".to_lowercase(), parse_cmd::undo::<RenderType>);
-        self.register_parser("redo".to_lowercase(), parse_cmd::redo::<RenderType>);
-        self.register_parser("delete".to_lowercase(), parse_cmd::delete::<RenderType>);
+        self.register_parser("move".to_lowercase(), parse_cmd::move_by);
+        self.register_parser("undo".to_lowercase(), parse_cmd::undo);
+        self.register_parser("redo".to_lowercase(), parse_cmd::redo);
+        self.register_parser("delete".to_lowercase(), parse_cmd::delete);
     }
 }
-impl<Reader, Stdout, Stderr, RenderType> CliCommander<Reader, Stdout, Stderr, RenderType>
+impl<Reader, Stdout, Stderr> CliCommander<Reader, Stdout, Stderr>
 where
-    RenderType: 'static,
     Reader: 'static + BufRead,
     Stdout: Write,
     Stderr: Write,
@@ -75,15 +70,15 @@ where
     pub fn register_parser(
         &mut self,
         cmd_name: String,
-        func: ParseFn<RenderType>,
-    ) -> Option<ParseFn<RenderType>> {
+        func: ParseFn,
+    ) -> Option<ParseFn> {
         self.parse_fn.insert(cmd_name, func)
     }
 
     fn parse_line(
         &mut self,
         line: Result<String, io::Error>,
-    ) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>> {
+    ) -> Result<Box<dyn Command>, Box<dyn Error>> {
         lazy_static! {
             static ref RE_POINT: Regex = Regex::new(r"^\s*(?P<cmd_name>\w+)(\s+(.*))?$").unwrap();
         }
@@ -117,35 +112,33 @@ where
     }
 }
 
-impl<RenderType> Default
-    for CliCommander<io::BufReader<io::Stdin>, io::Stdout, io::Stderr, RenderType>
+impl Default
+    for CliCommander<io::BufReader<io::Stdin>, io::Stdout, io::Stderr>
 where
-    RenderType: 'static,
-    Point: Shape<RenderType>,
-    Rectangle: Shape<RenderType>,
-    Line: Shape<RenderType>,
-    Circle: Shape<RenderType>,
-    Square: Shape<RenderType>,
+    Point: Shape,
+    Rectangle: Shape,
+    Line: Shape,
+    Circle: Shape,
+    Square: Shape,
 {
     fn default() -> Self {
         Self::new(io::BufReader::new(io::stdin()), io::stdout(), io::stderr())
     }
 }
 
-impl<Reader, Stdout, Stderr, RenderType> Iterator
-    for CliCommander<Reader, Stdout, Stderr, RenderType>
+impl<Reader, Stdout, Stderr> Iterator
+    for CliCommander<Reader, Stdout, Stderr>
 where
     Reader: 'static + BufRead,
     Stdout: Write,
     Stderr: Write,
-    RenderType: 'static,
-    Point: Shape<RenderType>,
-    Rectangle: Shape<RenderType>,
-    Line: Shape<RenderType>,
-    Circle: Shape<RenderType>,
-    Square: Shape<RenderType>,
+    Point: Shape,
+    Rectangle: Shape,
+    Line: Shape,
+    Circle: Shape,
+    Square: Shape,
 {
-    type Item = Box<dyn Command<RenderType>>;
+    type Item = Box<dyn Command>;
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
         while let Some(line) = self.next_line() {
             match self.parse_line(line) {

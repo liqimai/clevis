@@ -36,10 +36,9 @@ lazy_static! {
     ]);
 }
 
-pub fn point<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
+pub fn point(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>>
 where
-    RenderType: 'static,
-    Point: Shape<RenderType>,
+    Point: Shape,
 {
     lazy_static! {
         static ref PATTERN_CMD_POINT: String = vec!(
@@ -62,16 +61,15 @@ where
     let x = caps.name("x").ok_or(&err_msg[..])?.as_str().parse()?;
     let y = caps.name("y").ok_or(&err_msg[..])?.as_str().parse()?;
 
-    Ok(Box::new(DrawShape::<RenderType, _>::new(
+    Ok(Box::new(DrawShape::new(
         name.to_string(),
         Point { x, y },
     )))
 }
 
-pub fn rectangle<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
+pub fn rectangle(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>>
 where
-    RenderType: 'static,
-    Rectangle: Shape<RenderType>,
+    Rectangle: Shape,
 {
     lazy_static! {
         static ref PATTERN_CMD_RECTANGLE: String = vec!(
@@ -98,7 +96,7 @@ where
     let w = caps.name("w").ok_or(&err_msg[..])?.as_str().parse()?;
     let h = caps.name("h").ok_or(&err_msg[..])?.as_str().parse()?;
 
-    Ok(Box::new(DrawShape::<RenderType, _>::new(
+    Ok(Box::new(DrawShape::new(
         name.to_string(),
         Rectangle {
             corner: Point { x: x, y: y },
@@ -108,10 +106,9 @@ where
     )))
 }
 
-pub fn line<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
+pub fn line(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>>
 where
-    RenderType: 'static,
-    Line: Shape<RenderType>,
+    Line: Shape,
 {
     lazy_static! {
         static ref PATTERN_CMD_LINE: String = vec!(
@@ -138,16 +135,15 @@ where
     let x2 = caps.name("x2").ok_or(&err_msg[..])?.as_str().parse()?;
     let y2 = caps.name("y2").ok_or(&err_msg[..])?.as_str().parse()?;
 
-    Ok(Box::new(DrawShape::<RenderType, _>::new(
+    Ok(Box::new(DrawShape::new(
         name.to_string(),
         Line(Point { x: x1, y: y1 }, Point { x: x2, y: y2 }),
     )))
 }
 
-pub fn circle<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
+pub fn circle(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>>
 where
-    RenderType: 'static,
-    Circle: Shape<RenderType>,
+    Circle: Shape,
 {
     lazy_static! {
         static ref PATTERN_CMD_CIRCLE: String = vec!(
@@ -172,7 +168,7 @@ where
     let y = caps.name("y").ok_or(&err_msg[..])?.as_str().parse()?;
     let r = caps.name("r").ok_or(&err_msg[..])?.as_str().parse()?;
 
-    Ok(Box::new(DrawShape::<RenderType, _>::new(
+    Ok(Box::new(DrawShape::new(
         name.to_string(),
         Circle {
             center: Point { x, y },
@@ -181,10 +177,9 @@ where
     )))
 }
 
-pub fn square<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
+pub fn square(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>>
 where
-    RenderType: 'static,
-    Square: Shape<RenderType>,
+    Square: Shape,
 {
     lazy_static! {
         static ref PATTERN_CMD_SQUARE: String = vec!(
@@ -209,7 +204,7 @@ where
     let y = caps.name("y").ok_or(&err_msg[..])?.as_str().parse()?;
     let l = caps.name("l").ok_or(&err_msg[..])?.as_str().parse()?;
 
-    Ok(Box::new(DrawShape::<RenderType, _>::new(
+    Ok(Box::new(DrawShape::new(
         name.to_string(),
         Square {
             corner: Point { x, y },
@@ -218,7 +213,7 @@ where
     )))
 }
 
-pub fn move_by<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>> {
+pub fn move_by(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>> {
     lazy_static! {
         static ref PATTERN_CMD_MOVE: String = vec!(
             r"^\s*(?i:move)",
@@ -243,7 +238,7 @@ pub fn move_by<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, B
     Ok(Box::new(MoveBy::new(name.to_string(), dx, dy)))
 }
 
-pub fn undo<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>> {
+pub fn undo(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>> {
     lazy_static! {
         static ref PATTERN_CMD_UNDO: String = vec!(r"^\s*(?i:undo)\s*$",).join(r"\s+");
         static ref RE_CMD_UNDO: Regex = Regex::new(&PATTERN_CMD_UNDO).unwrap();
@@ -259,7 +254,7 @@ pub fn undo<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<
     Ok(Box::new(Control::Undo))
 }
 
-pub fn redo<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>> {
+pub fn redo(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>> {
     lazy_static! {
         static ref PATTERN_CMD_REDO: String = vec!(r"^\s*(?i:redo)\s*$",).join(r"\s+");
         static ref RE_CMD_REDO: Regex = Regex::new(&PATTERN_CMD_REDO).unwrap();
@@ -275,9 +270,8 @@ pub fn redo<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<
     Ok(Box::new(Control::Redo))
 }
 
-pub fn delete<RenderType>(line: &str) -> Result<Box<dyn Command<RenderType>>, Box<dyn Error>>
+pub fn delete(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>>
 where
-    RenderType: 'static,
 {
     lazy_static! {
         static ref PATTERN_CMD_DELETE: String =
@@ -299,78 +293,77 @@ where
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::render::DummyRenderer;
 
     #[test]
     fn test_from_string() {
         // point
-        let cmd_point = point::<DummyRenderer>("Point p1 2 3").unwrap();
+        let cmd_point = point("Point p1 2 3").unwrap();
         assert_eq!(format!("{}", cmd_point), "p1 Point { x: 2, y: 3 }");
-        let cmd_point = point::<DummyRenderer>("point p1 4 5").unwrap();
+        let cmd_point = point("point p1 4 5").unwrap();
         assert_eq!(format!("{}", cmd_point), "p1 Point { x: 4, y: 5 }");
-        assert!(!point::<DummyRenderer>("aaa bbb cc cc").is_ok());
+        assert!(!point("aaa bbb cc cc").is_ok());
 
         // rectangle
-        let cmd_rectangle = rectangle::<DummyRenderer>("rectangle rect 2 3 4 5").unwrap();
+        let cmd_rectangle = rectangle("rectangle rect 2 3 4 5").unwrap();
         assert_eq!(
             format!("{}", cmd_rectangle),
             "rect Rectangle { corner: Point { x: 2, y: 3 }, w: 4, h: 5 }"
         );
-        let cmd_rectangle = rectangle::<DummyRenderer>("Rectangle rect 4 5 3 2").unwrap();
+        let cmd_rectangle = rectangle("Rectangle rect 4 5 3 2").unwrap();
         assert_eq!(
             format!("{}", cmd_rectangle),
             "rect Rectangle { corner: Point { x: 4, y: 5 }, w: 3, h: 2 }"
         );
-        assert!(!rectangle::<DummyRenderer>("aaa bbb cc cc").is_ok());
+        assert!(!rectangle("aaa bbb cc cc").is_ok());
 
         // line
-        let cmd_line = line::<DummyRenderer>("line line1 2 3 4 5").unwrap();
+        let cmd_line = line("line line1 2 3 4 5").unwrap();
         assert_eq!(
             format!("{}", cmd_line),
             "line1 Line(Point { x: 2, y: 3 }, Point { x: 4, y: 5 })"
         );
-        let cmd_line = line::<DummyRenderer>("line line2 4 5 3 2").unwrap();
+        let cmd_line = line("line line2 4 5 3 2").unwrap();
         assert_eq!(
             format!("{}", cmd_line),
             "line2 Line(Point { x: 4, y: 5 }, Point { x: 3, y: 2 })"
         );
-        assert!(!line::<DummyRenderer>("aaa bbb cc cc").is_ok());
+        assert!(!line("aaa bbb cc cc").is_ok());
 
         // circle
-        let cmd_circle = circle::<DummyRenderer>("circle circle1 2 3 4").unwrap();
+        let cmd_circle = circle("circle circle1 2 3 4").unwrap();
         assert_eq!(
             format!("{}", cmd_circle),
             "circle1 Circle { center: Point { x: 2, y: 3 }, radius: 4 }"
         );
-        let cmd_circle = circle::<DummyRenderer>("circle circle2 4 5 3").unwrap();
+        let cmd_circle = circle("circle circle2 4 5 3").unwrap();
         assert_eq!(
             format!("{}", cmd_circle),
             "circle2 Circle { center: Point { x: 4, y: 5 }, radius: 3 }"
         );
-        assert!(!circle::<DummyRenderer>("aaa bbb cc cc").is_ok());
+        assert!(!circle("aaa bbb cc cc").is_ok());
 
         // square
-        let cmd_square = square::<DummyRenderer>("square square1 2 3 4").unwrap();
+        let cmd_square = square("square square1 2 3 4").unwrap();
         assert_eq!(
             format!("{}", cmd_square),
             "square1 Square { corner: Point { x: 2, y: 3 }, side: 4 }"
         );
-        let cmd_square = square::<DummyRenderer>("sQuare square2 4 5 3").unwrap();
+        let cmd_square = square("sQuare square2 4 5 3").unwrap();
         assert_eq!(
             format!("{}", cmd_square),
             "square2 Square { corner: Point { x: 4, y: 5 }, side: 3 }"
         );
-        assert!(!square::<DummyRenderer>("aaa bbb cc cc").is_ok());
+        assert!(!square("aaa bbb cc cc").is_ok());
 
-        let cmd_move = move_by::<DummyRenderer>("move aaa 3 -5").unwrap();
+        let cmd_move = move_by("move aaa 3 -5").unwrap();
         assert_eq!(format!("{}", cmd_move), "move aaa 3 -5");
 
-        let undo = undo::<DummyRenderer>("undo").unwrap();
+        let undo = undo("undo").unwrap();
         assert_eq!(format!("{}", undo), "undo");
-        let redo = redo::<DummyRenderer>("redo").unwrap();
+        let redo = redo("redo").unwrap();
         assert_eq!(format!("{}", redo), "redo");
 
-        let delete = delete::<DummyRenderer>("delete name").unwrap();
+        let delete = delete("delete name").unwrap();
         assert_eq!(format!("{}", delete), r#"Delete "name" with deleted None"#);
     }
 
@@ -380,7 +373,7 @@ pub mod tests {
 
         macro_rules! test {
             ($cmd: ident, $key: expr) => {
-                match $cmd::<DummyRenderer>(non_sense) {
+                match $cmd(non_sense) {
                     Err(error) => assert_eq!(
                         format!("{}", error),
                         format!(

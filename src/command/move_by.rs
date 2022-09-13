@@ -19,15 +19,15 @@ impl fmt::Display for MoveBy {
         write!(f, "move {} {} {}", self.name, self.dx, self.dy)
     }
 }
-impl<RenderType> Command<RenderType> for MoveBy {
-    fn execute(&mut self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+impl Command for MoveBy {
+    fn execute(&mut self, shapes: &mut Shapes) -> Result<(), Box<dyn Error>> {
         let err_msg = format!("Shape {:?} is not found.", self.name);
         let shape = shapes.get_mut(&self.name).ok_or(err_msg)?;
         shape.move_by(self.dx, self.dy);
 
         Ok(())
     }
-    fn undo(&mut self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+    fn undo(&mut self, shapes: &mut Shapes) -> Result<(), Box<dyn Error>> {
         let err_msg = format!("Shape {:?} is not found.", self.name);
         let shape = shapes.get_mut(&self.name).ok_or(err_msg)?;
         shape.move_by(-self.dx, -self.dy);
@@ -36,8 +36,8 @@ impl<RenderType> Command<RenderType> for MoveBy {
     }
     fn after_execute(
         &mut self,
-        _executor: &mut Executor<RenderType>,
-        _shapes: &mut Shapes<RenderType>,
+        _executor: &mut Executor,
+        _shapes: &mut Shapes,
     ) -> Result<bool, Box<dyn Error>> {
         Ok(true)
     }
@@ -59,7 +59,7 @@ pub mod tests {
 
         let mut shapes = Shapes::from([(
             "shape_name".to_string(),
-            Box::new(Point { x: 2, y: 4 }) as Box<dyn Shape<Vec<u8>>>,
+            Box::new(Point { x: 2, y: 4 }) as Box<dyn Shape>,
         )]);
 
         cmd.execute(&mut shapes).unwrap();

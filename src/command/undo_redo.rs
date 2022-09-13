@@ -18,17 +18,17 @@ impl fmt::Display for Control {
         )
     }
 }
-impl<RenderType> Command<RenderType> for Control {
-    fn execute(&mut self, _shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+impl Command for Control {
+    fn execute(&mut self, _shapes: &mut Shapes) -> Result<(), Box<dyn Error>> {
         Ok(())
     }
-    fn undo(&mut self, _shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+    fn undo(&mut self, _shapes: &mut Shapes) -> Result<(), Box<dyn Error>> {
         unimplemented!()
     }
     fn after_execute(
         &mut self,
-        executor: &mut Executor<RenderType>,
-        shapes: &mut Shapes<RenderType>,
+        executor: &mut Executor,
+        shapes: &mut Shapes,
     ) -> Result<bool, Box<dyn Error>> {
         match self {
             Control::Redo => executor.redo(shapes)?,

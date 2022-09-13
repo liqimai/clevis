@@ -1,4 +1,5 @@
-use super::{Error, Renderable, Renderer, Shape};
+use super::{Error, Renderer, Shape};
+use crate::shape::*;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io;
@@ -17,9 +18,14 @@ impl FileRenderer {
             file: File::create(filename)?,
         })
     }
+
+    pub fn draw_shape(&mut self, shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
+        self.file.write_all(format!("{:?}", &shape).as_bytes())?;
+        Ok(())
+    }
 }
 
-impl Renderer<FileRenderer> for FileRenderer {
+impl Renderer for FileRenderer {
     fn init_frame(&mut self) -> Result<(), Box<dyn Error>> {
         self.file = File::create(&self.filename)?;
         self.file.rewind()?;
@@ -36,31 +42,40 @@ impl Renderer<FileRenderer> for FileRenderer {
     fn render(
         &mut self,
         name: &str,
-        shape: &dyn Shape<FileRenderer>,
+        shape: &dyn Shape,
     ) -> Result<(), Box<dyn Error>> {
         self.file.write_all(name.as_bytes())?;
         self.file.write_all(b" ")?;
-        shape.draw(self)?;
+        shape.draw_on(self)?;
         self.file.write_all(b"\n")?;
 
         Ok(())
+    }
+
+    fn draw_point(&mut self, point: &Point) -> Result<(), Box<dyn Error>> {
+        self.draw_shape(point)
+    }
+
+    fn draw_line(&mut self, line: &Line) -> Result<(), Box<dyn Error>> {
+        self.draw_shape(line)
+    }
+    
+    fn draw_rectangle(&mut self, rectangle: &Rectangle) -> Result<(), Box<dyn Error>> {
+        self.draw_shape(rectangle)
+    }
+    
+    fn draw_circle(&mut self, circle: &Circle) -> Result<(), Box<dyn Error>> {
+        self.draw_shape(circle)
+    }
+    
+    fn draw_square(&mut self, square: &Square) -> Result<(), Box<dyn Error>> {
+        self.draw_shape(square)
     }
 }
 
 impl Drop for FileRenderer {
     fn drop(&mut self) {
         std::fs::remove_file(&self.filename).unwrap();
-    }
-}
-
-impl<T> Renderable<FileRenderer> for T
-where
-    T: Debug,
-{
-    fn draw(&self, render: &mut FileRenderer) -> Result<(), Box<dyn Error>> {
-        render.file.write_all(format!("{:?}", &self).as_bytes())?;
-
-        Ok(())
     }
 }
 

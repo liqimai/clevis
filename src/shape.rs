@@ -1,18 +1,14 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Debug;
+use crate::render::Renderer;
 
-pub trait Shape<RenderType>: Renderable<RenderType> + Movable + Debug + Send {}
-impl<T, RenderType> Shape<RenderType> for T where T: Renderable<RenderType> + Movable + Debug + Send {}
-
-pub trait Renderable<RenderType> {
-    fn draw(&self, render: &mut RenderType) -> Result<(), Box<dyn Error>>;
-}
-pub trait Movable {
+pub trait Shape: Debug + Send {
     fn move_by(&mut self, x: DataType, y: DataType);
+    fn draw_on(&self, render: &mut dyn Renderer) -> Result<(), Box<dyn Error>>;
 }
 
-pub type Shapes<RenderType> = HashMap<String, Box<dyn Shape<RenderType>>>;
+pub type Shapes = HashMap<String, Box<dyn Shape>>;
 
 pub type DataType = i32;
 
@@ -21,10 +17,13 @@ pub struct Point {
     pub x: DataType,
     pub y: DataType,
 }
-impl Movable for Point {
+impl Shape for Point {
     fn move_by(&mut self, x: DataType, y: DataType) {
         self.x += x;
         self.y += y;
+    }
+    fn draw_on(&self, render: &mut dyn Renderer) -> Result<(), Box<dyn Error>> {
+        render.draw_point(self)
     }
 }
 
@@ -34,18 +33,24 @@ pub struct Rectangle {
     pub w: DataType,
     pub h: DataType,
 }
-impl Movable for Rectangle {
+impl Shape for Rectangle {
     fn move_by(&mut self, x: DataType, y: DataType) {
         self.corner.move_by(x, y);
+    }
+    fn draw_on(&self, render: &mut dyn Renderer) -> Result<(), Box<dyn Error>> {
+        render.draw_rectangle(self)
     }
 }
 
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
 pub struct Line(pub Point, pub Point);
-impl Movable for Line {
+impl Shape for Line {
     fn move_by(&mut self, x: DataType, y: DataType) {
         self.0.move_by(x, y);
         self.1.move_by(x, y);
+    }
+    fn draw_on(&self, render: &mut dyn Renderer) -> Result<(), Box<dyn Error>> {
+        render.draw_line(self)
     }
 }
 
@@ -54,9 +59,12 @@ pub struct Circle {
     pub center: Point,
     pub radius: DataType,
 }
-impl Movable for Circle {
+impl Shape for Circle {
     fn move_by(&mut self, x: DataType, y: DataType) {
         self.center.move_by(x, y);
+    }
+    fn draw_on(&self, render: &mut dyn Renderer) -> Result<(), Box<dyn Error>> {
+        render.draw_circle(self)
     }
 }
 
@@ -65,9 +73,12 @@ pub struct Square {
     pub corner: Point,
     pub side: DataType,
 }
-impl Movable for Square {
+impl Shape for Square {
     fn move_by(&mut self, x: DataType, y: DataType) {
         self.corner.move_by(x, y);
+    }
+    fn draw_on(&self, render: &mut dyn Renderer) -> Result<(), Box<dyn Error>> {
+        render.draw_square(self)
     }
 }
 
@@ -75,34 +86,34 @@ impl Movable for Square {
 pub mod tests {
     use super::*;
 
-    pub fn get_shapes<RenderType>() -> Shapes<RenderType>
+    pub fn get_shapes() -> Shapes
     where
-        Point: Shape<RenderType>,
-        Rectangle: Shape<RenderType>,
-        Line: Shape<RenderType>,
-        Circle: Shape<RenderType>,
-        Square: Shape<RenderType>,
+        Point: Shape,
+        Rectangle: Shape,
+        Line: Shape,
+        Circle: Shape,
+        Square: Shape,
     {
-        let shapes: Shapes<RenderType> = HashMap::from([
+        let shapes: Shapes = HashMap::from([
             (
                 std::any::type_name::<Point>().into(),
-                Box::new(Point::default()) as Box<dyn Shape<RenderType>>,
+                Box::new(Point::default()) as Box<dyn Shape>,
             ),
             (
                 std::any::type_name::<Rectangle>().into(),
-                Box::new(Rectangle::default()) as Box<dyn Shape<RenderType>>,
+                Box::new(Rectangle::default()) as Box<dyn Shape>,
             ),
             (
                 std::any::type_name::<Line>().into(),
-                Box::new(Line::default()) as Box<dyn Shape<RenderType>>,
+                Box::new(Line::default()) as Box<dyn Shape>,
             ),
             (
                 std::any::type_name::<Circle>().into(),
-                Box::new(Circle::default()) as Box<dyn Shape<RenderType>>,
+                Box::new(Circle::default()) as Box<dyn Shape>,
             ),
             (
                 std::any::type_name::<Square>().into(),
-                Box::new(Square::default()) as Box<dyn Shape<RenderType>>,
+                Box::new(Square::default()) as Box<dyn Shape>,
             ),
         ]);
 

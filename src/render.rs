@@ -1,12 +1,13 @@
-use crate::shape::{Renderable, Shape, Shapes};
+use crate::shape::{Shape, Shapes};
 use std::borrow::Borrow;
 use std::error::Error;
+use crate::shape::*;
 
-pub trait Renderer<RenderType> {
+pub trait Renderer {
     fn init_frame(&mut self) -> Result<(), Box<dyn Error>>;
     fn finish_frame(&mut self) -> Result<(), Box<dyn Error>>;
-    fn render(&mut self, name: &str, shape: &dyn Shape<RenderType>) -> Result<(), Box<dyn Error>>;
-    fn render_shapes(&mut self, shapes: &Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+    fn render(&mut self, name: &str, shape: &dyn Shape) -> Result<(), Box<dyn Error>>;
+    fn render_shapes(&mut self, shapes: &Shapes) -> Result<(), Box<dyn Error>> {
         self.init_frame()?;
         for (name, shape) in shapes {
             self.render(name, shape.borrow())?;
@@ -14,6 +15,31 @@ pub trait Renderer<RenderType> {
         self.finish_frame()?;
 
         Ok(())
+    }
+
+    #[allow(unused_variables)]
+    fn draw_point(&mut self, point: &Point) -> Result<(), Box<dyn Error>> {
+        unimplemented!();
+    }
+
+    #[allow(unused_variables)]
+    fn draw_line(&mut self, line: &Line) -> Result<(), Box<dyn Error>> {
+        unimplemented!();
+    }
+    
+    #[allow(unused_variables)]
+    fn draw_rectangle(&mut self, rectangle: &Rectangle) -> Result<(), Box<dyn Error>> {
+        unimplemented!();
+    }
+    
+    #[allow(unused_variables)]
+    fn draw_circle(&mut self, circle: &Circle) -> Result<(), Box<dyn Error>> {
+        unimplemented!();
+    }
+    
+    #[allow(unused_variables)]
+    fn draw_square(&mut self, square: &Square) -> Result<(), Box<dyn Error>> {
+        unimplemented!();
     }
 }
 
@@ -31,22 +57,14 @@ pub mod tests {
     use super::*;
     pub use crate::shape::tests::get_shapes;
     pub use std::collections::HashMap;
-    use std::fmt::Debug;
     use std::io::Write;
-
-    impl<S, W> Renderable<W> for S
-    where
-        S: Debug,
-        W: Write,
-    {
-        fn draw(&self, render: &mut W) -> Result<(), Box<dyn Error>> {
-            render.write_all(format!("{:?}", &self).as_bytes())?;
-
-            Ok(())
-        }
+    
+    fn draw_shape_to_writer<W: Write>(writer: &mut W, shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
+        writer.write_all(format!("{:?}", &shape).as_bytes())?;
+        Ok(())
     }
 
-    impl<W: Write> Renderer<W> for W {
+    impl<W: Write> Renderer for W {
         fn init_frame(&mut self) -> Result<(), Box<dyn Error>> {
             self.write_all(b"\n")?;
             Ok(())
@@ -55,16 +73,36 @@ pub mod tests {
             self.flush()?;
             Ok(())
         }
-        fn render(&mut self, name: &str, shape: &dyn Shape<W>) -> Result<(), Box<dyn Error>> {
+        fn render(&mut self, name: &str, shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
             self.write_all(name.as_bytes())?;
             self.write_all(b" ")?;
-            shape.draw(self)?;
+            shape.draw_on(self)?;
             self.write_all(b"\n")?;
             Ok(())
         }
+
+        fn draw_point(&mut self, point: &Point) -> Result<(), Box<dyn Error>> {
+            draw_shape_to_writer(self, point)
+        }
+
+        fn draw_line(&mut self, line: &Line) -> Result<(), Box<dyn Error>> {
+            draw_shape_to_writer(self, line)
+        }
+        
+        fn draw_rectangle(&mut self, rectangle: &Rectangle) -> Result<(), Box<dyn Error>> {
+            draw_shape_to_writer(self, rectangle)
+        }
+        
+        fn draw_circle(&mut self, circle: &Circle) -> Result<(), Box<dyn Error>> {
+            draw_shape_to_writer(self, circle)
+        }
+        
+        fn draw_square(&mut self, square: &Square) -> Result<(), Box<dyn Error>> {
+            draw_shape_to_writer(self, square)
+        }
     }
 
-    pub fn get_writer_render_result(shapes: &Shapes<Vec<u8>>) -> String {
+    pub fn get_writer_render_result(shapes: &Shapes) -> String {
         let mut buff = Vec::<u8>::new();
         buff.render_shapes(&shapes).unwrap();
         String::from_utf8(buff).unwrap()

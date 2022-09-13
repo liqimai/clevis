@@ -3,18 +3,10 @@ use crate::shape::Shapes;
 use std::error::Error;
 use std::fmt;
 
-pub struct Executor<RenderType> {
-    pub executed: Vec<Box<dyn Command<RenderType>>>,
-    pub undone: Vec<Box<dyn Command<RenderType>>>,
-}
-
-impl<RenderType> Default for Executor<RenderType> {
-    fn default() -> Self {
-        Self {
-            executed: Vec::default(),
-            undone: Vec::default(),
-        }
-    }
+#[derive(Default)]
+pub struct Executor {
+    pub executed: Vec<Box<dyn Command>>,
+    pub undone: Vec<Box<dyn Command>>,
 }
 
 #[derive(Debug)]
@@ -36,11 +28,11 @@ impl std::fmt::Display for ExecutionError {
     }
 }
 
-impl<RenderType> Executor<RenderType> {
+impl Executor {
     pub fn execute(
         &mut self,
-        mut cmd: Box<dyn Command<RenderType>>,
-        shapes: &mut Shapes<RenderType>,
+        mut cmd: Box<dyn Command>,
+        shapes: &mut Shapes,
     ) -> Result<(), Box<dyn Error>> {
         cmd.execute(shapes)?;
         if cmd.after_execute(self, shapes)? {
@@ -49,7 +41,7 @@ impl<RenderType> Executor<RenderType> {
         }
         Ok(())
     }
-    pub fn undo(&mut self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+    pub fn undo(&mut self, shapes: &mut Shapes) -> Result<(), Box<dyn Error>> {
         let mut cmd = self.executed.pop().ok_or(ExecutionError::NoCmdToUndo)?;
         cmd.undo(shapes)?;
         self.undone.push(cmd);
@@ -57,7 +49,7 @@ impl<RenderType> Executor<RenderType> {
         Ok(())
     }
 
-    pub fn redo(&mut self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+    pub fn redo(&mut self, shapes: &mut Shapes) -> Result<(), Box<dyn Error>> {
         let mut cmd = self.undone.pop().ok_or(ExecutionError::NoCmdToRedo)?;
         cmd.execute(shapes)?;
         self.executed.push(cmd);

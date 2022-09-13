@@ -1,78 +1,73 @@
 use super::{Command, Error, Executor};
 use crate::shape::{Shape, Shapes};
 use std::fmt;
-use std::marker::PhantomData;
 
-pub struct DrawShape<RenderType, ShapeType>
+pub struct DrawShape<ShapeType>
 where
-    ShapeType: Shape<RenderType>,
+    ShapeType: Shape,
 {
     name: String,
     shape: ShapeType,
-    phantom: PhantomData<RenderType>,
 }
 
-impl<RenderType, ShapeType> DrawShape<RenderType, ShapeType>
+impl<ShapeType> DrawShape<ShapeType>
 where
-    ShapeType: Shape<RenderType>,
+    ShapeType: Shape,
 {
     pub fn new(name: String, shape: ShapeType) -> Self {
         Self {
             name,
             shape,
-            phantom: PhantomData,
         }
     }
 }
 
-impl<RenderType, ShapeType> Clone for DrawShape<RenderType, ShapeType>
+impl<ShapeType> Clone for DrawShape<ShapeType>
 where
-    ShapeType: Shape<RenderType> + Clone,
+    ShapeType: Shape + Clone,
 {
     fn clone(&self) -> Self {
         Self::new(self.name.clone(), self.shape.clone())
     }
 }
 
-impl<RenderType, ShapeType> Default for DrawShape<RenderType, ShapeType>
+impl<ShapeType> Default for DrawShape<ShapeType>
 where
-    ShapeType: Shape<RenderType> + Default,
+    ShapeType: Shape + Default,
 {
     fn default() -> Self {
         Self {
             name: std::any::type_name::<ShapeType>().into(),
             shape: ShapeType::default(),
-            phantom: PhantomData,
         }
     }
 }
 
-impl<RenderType, ShapeType> fmt::Display for DrawShape<RenderType, ShapeType>
+impl<ShapeType> fmt::Display for DrawShape<ShapeType>
 where
-    ShapeType: Shape<RenderType>,
+    ShapeType: Shape,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} {:?}", self.name, self.shape)
     }
 }
 
-impl<RenderType, ShapeType> Command<RenderType> for DrawShape<RenderType, ShapeType>
+impl<ShapeType> Command for DrawShape<ShapeType>
 where
-    ShapeType: 'static + Shape<RenderType> + Clone,
-    RenderType: 'static,
+    ShapeType: 'static + Shape + Clone,
 {
-    fn execute(&mut self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+    fn execute(&mut self, shapes: &mut Shapes) -> Result<(), Box<dyn Error>> {
         shapes.insert(self.name.clone(), Box::new((self.shape).clone()));
         Ok(())
     }
-    fn undo(&mut self, shapes: &mut Shapes<RenderType>) -> Result<(), Box<dyn Error>> {
+    fn undo(&mut self, shapes: &mut Shapes) -> Result<(), Box<dyn Error>> {
         shapes.remove(&self.name);
         Ok(())
     }
     fn after_execute(
         &mut self,
-        _executor: &mut Executor<RenderType>,
-        _shapes: &mut Shapes<RenderType>,
+        _executor: &mut Executor,
+        _shapes: &mut Shapes,
     ) -> Result<bool, Box<dyn Error>> {
         Ok(true)
     }
@@ -81,20 +76,17 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::render::DummyRenderer;
     use crate::shape::*;
 
     #[test]
     fn execute() {
-        let mut cmd1 = DrawShape::<DummyRenderer, _> {
+        let mut cmd1 = DrawShape {
             shape: Point::default(),
             name: "p1".to_string(),
-            phantom: PhantomData,
         };
-        let mut cmd2 = DrawShape::<DummyRenderer, _> {
+        let mut cmd2 = DrawShape {
             shape: Rectangle::default(),
             name: "p2".to_string(),
-            phantom: PhantomData,
         };
         let mut shapes = Shapes::default();
 

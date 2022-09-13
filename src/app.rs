@@ -14,10 +14,10 @@ use crate::shape::Shapes;
 pub struct App<LoggerType, RenderType>
 where
     LoggerType: Logger,
-    RenderType: Renderer<RenderType>,
+    RenderType: Renderer,
 {
     // store shapes
-    shapes: Arc<Mutex<Shapes<RenderType>>>,
+    shapes: Arc<Mutex<Shapes>>,
 
     // draw shapes in its own way
     renderer: Arc<Mutex<RenderType>>,
@@ -26,7 +26,7 @@ where
     logger: LoggerType,
 
     // execute command
-    executor: Executor<RenderType>,
+    executor: Executor,
 
     pub fps: u64,
     pub async_render: bool,
@@ -35,7 +35,7 @@ where
 impl<LoggerType, RenderType> App<LoggerType, RenderType>
 where
     LoggerType: Logger,
-    RenderType: Renderer<RenderType> + 'static + Send,
+    RenderType: Renderer + 'static + Send,
 {
     pub fn new(logger: LoggerType, renderer: RenderType) -> Self {
         App {
@@ -47,7 +47,7 @@ where
             async_render: true,
         }
     }
-    pub fn execute(&mut self, cmd: Box<dyn Command<RenderType>>) -> Result<(), Box<dyn Error + '_>> {
+    pub fn execute(&mut self, cmd: Box<dyn Command>) -> Result<(), Box<dyn Error + '_>> {
         self.executor.execute(cmd, self.shapes.lock()?.borrow_mut())?;
         Ok(())
     }
@@ -79,7 +79,7 @@ where
 
         return (join_handle, tx)
     }
-    pub fn run<CommanderType: Commander<RenderType>>(&mut self, commander: CommanderType) {
+    pub fn run<CommanderType: Commander>(&mut self, commander: CommanderType) {
         if self.async_render {
             let (join_handle, render_signal) = self.start_render_thread();
             for cmd in commander {
