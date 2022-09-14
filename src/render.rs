@@ -3,7 +3,7 @@ use std::borrow::Borrow;
 use std::error::Error;
 use crate::shape::*;
 
-pub trait Renderer {
+pub trait Renderer: Send {
     fn init_frame(&mut self) -> Result<(), Box<dyn Error>>;
     fn finish_frame(&mut self) -> Result<(), Box<dyn Error>>;
     fn render(&mut self, name: &str, shape: &dyn Shape) -> Result<(), Box<dyn Error>>;
@@ -64,7 +64,7 @@ pub mod tests {
         Ok(())
     }
 
-    impl<W: Write> Renderer for W {
+    impl<W: Write + Send> Renderer for W {
         fn init_frame(&mut self) -> Result<(), Box<dyn Error>> {
             self.write_all(b"\n")?;
             Ok(())

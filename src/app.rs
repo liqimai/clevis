@@ -7,45 +7,59 @@ use std::{thread, time};
 use crate::command::Command;
 use crate::commander::Commander;
 use crate::executor::Executor;
-use crate::log::Logger;
-use crate::render::Renderer;
+use crate::log::{Logger, DummyLogger};
+use crate::render::{Renderer, DummyRenderer};
 use crate::shape::Shapes;
 
-pub struct App<LoggerType, RenderType>
-where
-    LoggerType: Logger,
-    RenderType: Renderer,
+pub struct App
 {
     // store shapes
     shapes: Arc<Mutex<Shapes>>,
 
     // draw shapes in its own way
-    renderer: Arc<Mutex<RenderType>>,
+    renderer: Arc<Mutex<dyn Renderer>>,
 
-    // a list of logger
-    logger: LoggerType,
+    // logger
+    logger: Box<dyn Logger>,
 
     // execute command
     executor: Executor,
 
-    pub fps: u64,
-    pub async_render: bool,
+    fps: u64,
+    async_render: bool,
 }
 
-impl<LoggerType, RenderType> App<LoggerType, RenderType>
-where
-    LoggerType: Logger,
-    RenderType: Renderer + 'static + Send,
+impl App
 {
-    pub fn new(logger: LoggerType, renderer: RenderType) -> Self {
-        App {
-            shapes: Arc::new(Mutex::new(Shapes::default())),
-            executor: Executor::default(),
-            renderer: Arc::new(Mutex::new(renderer)),
-            logger,
-            fps: 10,
-            async_render: true,
-        }
+    pub fn new<LoggerType, RendererType>(logger: LoggerType, renderer: RendererType, async_render: bool) -> Self 
+    where
+        LoggerType: 'static + Logger,
+        RendererType: 'static + Renderer,
+    {
+        let mut app = App::default();
+        app.set_logger(logger);
+        app.set_renderer(renderer);
+        app.set_async_render(async_render);
+        app
+    }
+
+    pub fn set_renderer<RendererType>(&mut self, renderer: RendererType) 
+    where
+        RendererType: 'static + Renderer,
+    {
+        self.renderer = Arc::new(Mutex::new(renderer));
+    }
+    pub fn set_logger<LoggerType>(&mut self, logger: LoggerType) 
+    where
+        LoggerType: 'static + Logger,
+    {
+        self.logger = Box::new(logger);
+    }
+    pub fn set_fps(&mut self, fps: u64) {
+        self.fps = fps;
+    }
+    pub fn set_async_render(&mut self, async_render: bool) {
+        self.async_render = async_render;
     }
     pub fn execute(&mut self, cmd: Box<dyn Command>) -> Result<(), Box<dyn Error + '_>> {
         self.executor.execute(cmd, self.shapes.lock()?.borrow_mut())?;
@@ -108,6 +122,20 @@ where
     }
 }
 
+impl Default for App
+{
+    fn default() -> Self {
+        App {
+            shapes: Arc::new(Mutex::new(Shapes::default())),
+            executor: Executor::default(),
+            renderer: Arc::new(Mutex::new(DummyRenderer)),
+            logger: Box::new(DummyLogger),
+            fps: 10,
+            async_render: false,
+        }
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -115,8 +143,8 @@ pub mod tests {
     use crate::log::DummyLogger;
     use crate::render::DummyRenderer;
 
-    pub fn get_test_app() -> App<DummyLogger, DummyRenderer> {
-        App::new(DummyLogger, DummyRenderer)
+    pub fn get_test_app() -> App {
+        App::new(DummyLogger, DummyRenderer, true)
     }
 
     #[test]
@@ -131,7 +159,7 @@ pub mod tests {
     fn test_file_renderer() {
         use crate::render::FileRenderer;
         let screen_file_name = "crate::app::tests::test_file_renderer.screen";
-        let mut app = App::new(DummyLogger, FileRenderer::new(screen_file_name).unwrap());
+        let mut app = App::new(DummyLogger, FileRenderer::new(screen_file_name).unwrap(), true);
         let commander = get_cmd_vec();
         app.run(commander);
     }
