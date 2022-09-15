@@ -1,7 +1,7 @@
+use crate::render::Renderer;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Debug;
-use crate::render::Renderer;
 
 pub trait Shape: Debug + Send {
     fn move_by(&mut self, x: DataType, y: DataType);

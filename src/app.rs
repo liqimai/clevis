@@ -1,18 +1,17 @@
 use std::borrow::Borrow;
 use std::borrow::BorrowMut;
 use std::error::Error;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{mpsc, Arc, Mutex};
 use std::{thread, time};
 
 use crate::command::Command;
 use crate::commander::Commander;
 use crate::executor::Executor;
-use crate::log::{Logger, DummyLogger};
-use crate::render::{Renderer, DummyRenderer};
+use crate::log::{DummyLogger, Logger};
+use crate::render::{DummyRenderer, Renderer};
 use crate::shape::Shapes;
 
-pub struct App
-{
+pub struct App {
     // store shapes
     shapes: Arc<Mutex<Shapes>>,
 
@@ -29,9 +28,12 @@ pub struct App
     async_render: bool,
 }
 
-impl App
-{
-    pub fn new<LoggerType, RendererType>(logger: LoggerType, renderer: RendererType, async_render: bool) -> Self 
+impl App {
+    pub fn new<LoggerType, RendererType>(
+        logger: LoggerType,
+        renderer: RendererType,
+        async_render: bool,
+    ) -> Self
     where
         LoggerType: 'static + Logger,
         RendererType: 'static + Renderer,
@@ -43,13 +45,13 @@ impl App
         app
     }
 
-    pub fn set_renderer<RendererType>(&mut self, renderer: RendererType) 
+    pub fn set_renderer<RendererType>(&mut self, renderer: RendererType)
     where
         RendererType: 'static + Renderer,
     {
         self.renderer = Arc::new(Mutex::new(renderer));
     }
-    pub fn set_logger<LoggerType>(&mut self, logger: LoggerType) 
+    pub fn set_logger<LoggerType>(&mut self, logger: LoggerType)
     where
         LoggerType: 'static + Logger,
     {
@@ -62,11 +64,14 @@ impl App
         self.async_render = async_render;
     }
     pub fn execute(&mut self, cmd: Box<dyn Command>) -> Result<(), Box<dyn Error + '_>> {
-        self.executor.execute(cmd, self.shapes.lock()?.borrow_mut())?;
+        self.executor
+            .execute(cmd, self.shapes.lock()?.borrow_mut())?;
         Ok(())
     }
     pub fn render_shapes(&mut self) -> Result<(), Box<dyn Error + '_>> {
-        self.renderer.lock()?.render_shapes(self.shapes.lock()?.borrow())?;
+        self.renderer
+            .lock()?
+            .render_shapes(self.shapes.lock()?.borrow())?;
 
         Ok(())
     }
@@ -75,11 +80,11 @@ impl App
         let renderer = Arc::clone(&self.renderer);
         let (tx, rx) = mpsc::channel::<()>();
         let fps = self.fps;
-        
+
         let join_handle = thread::spawn(move || {
             let render = || -> Result<(), Box<dyn Error + '_>> {
                 renderer.lock()?.render_shapes(shapes.lock()?.borrow())?;
-                thread::sleep(time::Duration::from_millis(1000/fps));
+                thread::sleep(time::Duration::from_millis(1000 / fps));
                 Ok(())
             };
             while let Ok(_) = rx.recv() {
@@ -91,7 +96,7 @@ impl App
             }
         });
 
-        return (join_handle, tx)
+        return (join_handle, tx);
     }
     pub fn run<CommanderType: Commander>(&mut self, commander: CommanderType) {
         if self.async_render {
@@ -122,8 +127,7 @@ impl App
     }
 }
 
-impl Default for App
-{
+impl Default for App {
     fn default() -> Self {
         App {
             shapes: Arc::new(Mutex::new(Shapes::default())),
@@ -152,14 +156,21 @@ pub mod tests {
         let commander = get_cmd_vec();
         let mut app = get_test_app();
         app.run(commander);
-        assert_eq!(app.executor.executed.len(), app.shapes.lock().unwrap().borrow().len());
+        assert_eq!(
+            app.executor.executed.len(),
+            app.shapes.lock().unwrap().borrow().len()
+        );
     }
 
     #[test]
     fn test_file_renderer() {
         use crate::render::FileRenderer;
         let screen_file_name = "crate::app::tests::test_file_renderer.screen";
-        let mut app = App::new(DummyLogger, FileRenderer::new(screen_file_name).unwrap(), true);
+        let mut app = App::new(
+            DummyLogger,
+            FileRenderer::new(screen_file_name).unwrap(),
+            true,
+        );
         let commander = get_cmd_vec();
         app.run(commander);
     }

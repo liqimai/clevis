@@ -1,7 +1,7 @@
+use crate::shape::*;
 use crate::shape::{Shape, Shapes};
 use std::borrow::Borrow;
 use std::error::Error;
-use crate::shape::*;
 
 pub trait Renderer: Send {
     fn init_frame(&mut self) -> Result<(), Box<dyn Error>>;
@@ -17,29 +17,41 @@ pub trait Renderer: Send {
         Ok(())
     }
 
-    #[allow(unused_variables)]
-    fn draw_point(&mut self, point: &Point) -> Result<(), Box<dyn Error>> {
-        unimplemented!();
+    fn draw_point(&mut self, point: &Point) -> Result<(), Box<dyn Error>>;
+
+    fn draw_line(&mut self, line: &Line) -> Result<(), Box<dyn Error>>;
+
+    fn draw_circle(&mut self, circle: &Circle) -> Result<(), Box<dyn Error>>;
+
+    fn draw_rectangle(&mut self, rectangle: &Rectangle) -> Result<(), Box<dyn Error>> {
+        // default implementation, may be slow.
+        let p1 = rectangle.corner;
+        let p2 = Point {
+            x: rectangle.corner.x + rectangle.w,
+            y: rectangle.corner.y,
+        };
+        let p3 = Point {
+            x: rectangle.corner.x,
+            y: rectangle.corner.y + rectangle.h,
+        };
+        let p4 = Point {
+            x: rectangle.corner.x + rectangle.w,
+            y: rectangle.corner.y + rectangle.h,
+        };
+        self.draw_line(&Line(p1, p2))?;
+        self.draw_line(&Line(p1, p3))?;
+        self.draw_line(&Line(p2, p4))?;
+        self.draw_line(&Line(p3, p4))?;
+        Ok(())
     }
 
-    #[allow(unused_variables)]
-    fn draw_line(&mut self, line: &Line) -> Result<(), Box<dyn Error>> {
-        unimplemented!();
-    }
-    
-    #[allow(unused_variables)]
-    fn draw_rectangle(&mut self, rectangle: &Rectangle) -> Result<(), Box<dyn Error>> {
-        unimplemented!();
-    }
-    
-    #[allow(unused_variables)]
-    fn draw_circle(&mut self, circle: &Circle) -> Result<(), Box<dyn Error>> {
-        unimplemented!();
-    }
-    
-    #[allow(unused_variables)]
     fn draw_square(&mut self, square: &Square) -> Result<(), Box<dyn Error>> {
-        unimplemented!();
+        // default implementation, may be slow.
+        self.draw_rectangle(&Rectangle {
+            corner: square.corner,
+            w: square.side,
+            h: square.side,
+        })
     }
 }
 
@@ -58,8 +70,11 @@ pub mod tests {
     pub use crate::shape::tests::get_shapes;
     pub use std::collections::HashMap;
     use std::io::Write;
-    
-    fn draw_shape_to_writer<W: Write>(writer: &mut W, shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
+
+    fn draw_shape_to_writer<W: Write>(
+        writer: &mut W,
+        shape: &dyn Shape,
+    ) -> Result<(), Box<dyn Error>> {
         writer.write_all(format!("{:?}", &shape).as_bytes())?;
         Ok(())
     }
@@ -88,15 +103,15 @@ pub mod tests {
         fn draw_line(&mut self, line: &Line) -> Result<(), Box<dyn Error>> {
             draw_shape_to_writer(self, line)
         }
-        
+
         fn draw_rectangle(&mut self, rectangle: &Rectangle) -> Result<(), Box<dyn Error>> {
             draw_shape_to_writer(self, rectangle)
         }
-        
+
         fn draw_circle(&mut self, circle: &Circle) -> Result<(), Box<dyn Error>> {
             draw_shape_to_writer(self, circle)
         }
-        
+
         fn draw_square(&mut self, square: &Square) -> Result<(), Box<dyn Error>> {
             draw_shape_to_writer(self, square)
         }

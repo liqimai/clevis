@@ -109,8 +109,7 @@ impl HtmlRenderer {
                 .output()?;
         }
         if cfg!(target_os = "windows") {
-            process::Command::new(self.html_file_path())
-                .output()?;
+            process::Command::new(self.html_file_path()).output()?;
         }
 
         Ok(())
@@ -135,11 +134,7 @@ impl Renderer for HtmlRenderer {
 
         Ok(())
     }
-    fn render(
-        &mut self,
-        name: &str,
-        shape: &dyn Shape,
-    ) -> Result<(), Box<dyn Error>> {
+    fn render(&mut self, name: &str, shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
         shape.draw_on(self)?;
         self.file.write_all(format!(" // {} \n", name).as_bytes())?;
 
@@ -147,9 +142,8 @@ impl Renderer for HtmlRenderer {
     }
 
     fn draw_point(&mut self, point: &Point) -> Result<(), Box<dyn Error>> {
-        self.file.write_all(
-            format!("point({}, {});", point.x, point.y).as_bytes()
-        )?;
+        self.file
+            .write_all(format!("point({}, {});", point.x, point.y).as_bytes())?;
         Ok(())
     }
 
@@ -163,7 +157,7 @@ impl Renderer for HtmlRenderer {
         )?;
         Ok(())
     }
-    
+
     fn draw_rectangle(&mut self, rectangle: &Rectangle) -> Result<(), Box<dyn Error>> {
         self.file.write_all(
             format!(
@@ -174,7 +168,7 @@ impl Renderer for HtmlRenderer {
         )?;
         Ok(())
     }
-    
+
     fn draw_circle(&mut self, circle: &Circle) -> Result<(), Box<dyn Error>> {
         self.file.write_all(
             format!(
@@ -185,7 +179,7 @@ impl Renderer for HtmlRenderer {
         )?;
         Ok(())
     }
-    
+
     fn draw_square(&mut self, square: &Square) -> Result<(), Box<dyn Error>> {
         self.file.write_all(
             format!(

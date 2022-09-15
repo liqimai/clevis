@@ -15,10 +15,7 @@ where
     ShapeType: Shape,
 {
     pub fn new(name: String, shape: ShapeType) -> Self {
-        Self {
-            name,
-            shape,
-        }
+        Self { name, shape }
     }
 }
 

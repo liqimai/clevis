@@ -24,8 +24,7 @@ impl fmt::Display for Delete {
     }
 }
 
-impl Command for Delete
-{
+impl Command for Delete {
     fn execute(&mut self, shapes: &mut Shapes) -> Result<(), Box<dyn Error>> {
         let err_msg = format!("Shape {:?} is not found.", self.name);
         let shape = shapes.remove(&self.name).ok_or(err_msg)?;

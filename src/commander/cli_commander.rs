@@ -47,10 +47,7 @@ where
 
     fn register_parse_fn(&mut self) {
         self.register_parser("point".to_lowercase(), parse_cmd::point);
-        self.register_parser(
-            "rectangle".to_lowercase(),
-            parse_cmd::rectangle,
-        );
+        self.register_parser("rectangle".to_lowercase(), parse_cmd::rectangle);
         self.register_parser("line".to_lowercase(), parse_cmd::line);
         self.register_parser("circle".to_lowercase(), parse_cmd::circle);
         self.register_parser("square".to_lowercase(), parse_cmd::square);
@@ -67,11 +64,7 @@ where
     Stdout: Write,
     Stderr: Write,
 {
-    pub fn register_parser(
-        &mut self,
-        cmd_name: String,
-        func: ParseFn,
-    ) -> Option<ParseFn> {
+    pub fn register_parser(&mut self, cmd_name: String, func: ParseFn) -> Option<ParseFn> {
         self.parse_fn.insert(cmd_name, func)
     }
 
@@ -112,8 +105,7 @@ where
     }
 }
 
-impl Default
-    for CliCommander<io::BufReader<io::Stdin>, io::Stdout, io::Stderr>
+impl Default for CliCommander<io::BufReader<io::Stdin>, io::Stdout, io::Stderr>
 where
     Point: Shape,
     Rectangle: Shape,
@@ -126,8 +118,7 @@ where
     }
 }
 
-impl<Reader, Stdout, Stderr> Iterator
-    for CliCommander<Reader, Stdout, Stderr>
+impl<Reader, Stdout, Stderr> Iterator for CliCommander<Reader, Stdout, Stderr>
 where
     Reader: 'static + BufRead,
     Stdout: Write,

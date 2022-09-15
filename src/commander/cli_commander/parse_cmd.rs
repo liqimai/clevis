@@ -61,10 +61,7 @@ where
     let x = caps.name("x").ok_or(&err_msg[..])?.as_str().parse()?;
     let y = caps.name("y").ok_or(&err_msg[..])?.as_str().parse()?;
 
-    Ok(Box::new(DrawShape::new(
-        name.to_string(),
-        Point { x, y },
-    )))
+    Ok(Box::new(DrawShape::new(name.to_string(), Point { x, y })))
 }
 
 pub fn rectangle(line: &str) -> Result<Box<dyn Command>, Box<dyn Error>>

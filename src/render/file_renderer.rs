@@ -39,11 +39,7 @@ impl Renderer for FileRenderer {
 
         Ok(())
     }
-    fn render(
-        &mut self,
-        name: &str,
-        shape: &dyn Shape,
-    ) -> Result<(), Box<dyn Error>> {
+    fn render(&mut self, name: &str, shape: &dyn Shape) -> Result<(), Box<dyn Error>> {
         self.file.write_all(name.as_bytes())?;
         self.file.write_all(b" ")?;
         shape.draw_on(self)?;
@@ -59,15 +55,15 @@ impl Renderer for FileRenderer {
     fn draw_line(&mut self, line: &Line) -> Result<(), Box<dyn Error>> {
         self.draw_shape(line)
     }
-    
+
     fn draw_rectangle(&mut self, rectangle: &Rectangle) -> Result<(), Box<dyn Error>> {
         self.draw_shape(rectangle)
     }
-    
+
     fn draw_circle(&mut self, circle: &Circle) -> Result<(), Box<dyn Error>> {
         self.draw_shape(circle)
     }
-    
+
     fn draw_square(&mut self, square: &Square) -> Result<(), Box<dyn Error>> {
         self.draw_shape(square)
     }

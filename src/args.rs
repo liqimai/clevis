@@ -1,18 +1,18 @@
-use clap::Parser;
-use super::app::{App};
-use super::render::{FileRenderer, HtmlRenderer, DummyRenderer};
+use super::app::App;
 use super::log::DummyLogger;
+use super::render::{DummyRenderer, FileRenderer, HtmlRenderer};
+use clap::Parser;
 use std::error::Error;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum, Debug)]
-enum RenderType{
+enum RenderType {
     Html,
     Text,
     Dummy,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum, Debug)]
-enum LoggerType{
+enum LoggerType {
     Dummy,
 }
 
@@ -20,17 +20,17 @@ enum LoggerType{
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
-   /// Render type
-   #[clap(long, value_parser, default_value = "html")]
-   renderer: RenderType,
+    /// Render type
+    #[clap(long, value_parser, default_value = "html")]
+    renderer: RenderType,
 
-   /// Logger type
-   #[clap(long, value_parser, default_value = "dummy")]
-   logger: LoggerType,
+    /// Logger type
+    #[clap(long, value_parser, default_value = "dummy")]
+    logger: LoggerType,
 
-   /// Async render or not
-   #[clap(long, action = clap::ArgAction::StoreValue, default_value_t = true)]
-   async_render: bool,
+    /// Async render or not
+    #[clap(long, action = clap::ArgAction::StoreValue, default_value_t = true)]
+    async_render: bool,
 }
 
 impl TryInto<App> for Args {

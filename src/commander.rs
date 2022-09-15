@@ -2,10 +2,7 @@ use crate::command::Command;
 
 pub trait Commander: IntoIterator<Item = Box<dyn Command>> {}
 
-impl<T> Commander for T where
-    T: IntoIterator<Item = Box<dyn Command>>
-{
-}
+impl<T> Commander for T where T: IntoIterator<Item = Box<dyn Command>> {}
 
 pub mod cli_commander;
 pub use cli_commander::CliCommander;
