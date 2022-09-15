@@ -22,15 +22,18 @@ Press <kbd>CTRL</kbd>+<kbd>D</kbd> to exit.
 
 # Extensibility
 
-The whole program is designed to be easily extensible. On top level, there are two component, a `Commander` and an `App`.
+The whole program is designed to be highly extensible. On top level, there are two component, a `Commander` and an `App`.
  - `Commander`: responsible to read user input and generate `Command`s for `App`.
  - `App`: designed in MVC architecture. 
-    - `Shapes`: a `HashMap` storing all shapes drawn.
+    - `Shapes`: a `HashMap` storing all shapes.
     - `Executor`: receive `Command`s and execute them to manipulate `Shapes`.
     - `Renderer`: render the current frame according to `Shapes` in an async asynchronous manner.
 
 ## New Shape
-Please add new shape types to `crate::shape` by implementing `Shapes` trait.
+To add a new shape, you need to
+1. Add a new struct in `src/shapes.rs`, and implementing `Shape` trait for it.
+2. When you implement `draw_on()` function, which is required by `Shape` trait, if you need help from renderer side, feel free add a new member function like `draw_your_shpae()` to `Renderer` trait in `src/renderer.rs`. If you want existing renderers to support your new shape, please implement `draw_your_shpae()` for all existing renderers.
+3. Add a new command to `src/command/draw_shape.rs` which allows users to draw your shape.
 
 ## New Command
 You may add new command types to `crate::command` scope by implementing `Command` trait. Don't forget to add a parse function for your command in `crate::commander::cli_commander`.
